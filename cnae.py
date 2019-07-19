@@ -47,7 +47,7 @@ class NAE:
     
         url = 'https://'+self.ip_addr+'/api/v1/login'
     
-        self.http_header['X-CANDID-LOGIN-OTP'] = req.headers['X-CANDID-LOGIN-OTP']
+        self.http_header['X-NAE-LOGIN-OTP'] = req.headers['X-NAE-LOGIN-OTP']
         
         user_credentials =json.dumps({"username": user, "password": password, "domain": domain})
     
@@ -60,13 +60,13 @@ class NAE:
 
         
         # Save the Candid CSRF token, is needed when we do POSTs. 
-        self.http_header['X-CANDID-CSRF-TOKEN'] = req.headers['X-CANDID-CSRF-TOKEN']
+        self.http_header['X-NAE-CSRF-TOKEN'] = req.headers['X-NAE-CSRF-TOKEN']
 
         # Update with the authenticated Cookie
         self.session_cookie['SESSION'] = req.cookies['SESSION']
 
         #Remove the LOGIN-OTP from header, is only needed at the beginning 
-        self.http_header.pop('X-CANDID-LOGIN-OTP', None)
+        self.http_header.pop('X-NAE-LOGIN-OTP', None)
 
         
     #This method will get the list of all the assurance groups
@@ -131,6 +131,15 @@ class NAE:
                 self.logger.info('OnDemand Analysis failed to start on %s.', ag_name)
                 pprint(req.json())
                 exit()
+    def updateLicense(self,license):
+        pass
+
+    def getApplianceID(self):
+        # Get Appliance ID
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/candid-version'
+        req = requests.get(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        return req.json()['value']['data']['candid_appliance_id'].strip()
+
 
     def StopLiveAnalysis(self,ag_name):
         current_ondemand = isOnDemandAnalysis()
