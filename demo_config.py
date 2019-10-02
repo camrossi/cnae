@@ -265,6 +265,4 @@ for ag in offline_analysis:
 
 # Create Delta Analysis:
 for ag in  offline_analysis:
-    deltaAnalysis(ag['unique_name'])
-
-
+    deltaAnalysis(str(nae.getAG(ag['ag'])['unique_name']))
