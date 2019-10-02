@@ -6,6 +6,7 @@ import logging
 import time
 import argparse
 import getpass
+from pprint import pprint
 
 
 # Enble logging at debug level
@@ -20,10 +21,27 @@ def get_args():
     args = parser.parse_args()
     return args
 
+def deltaAnalysis(ag_name):
+    epochs = nae.getEpochs(ag_name)
+    epochs_id = []
+    for e in epochs:
+        epochs_id.append(e['epoch_id'])
+    
+    #pair the epochs together and drop the last pair, I do not need newest-oldest epoch pair. 
+    #This creates one delta analysis between every epoch
+    epoch_pairs = (list(zip(epochs_id, epochs_id[1:] + epochs_id[:1])))
+    epoch_pairs.pop()
+    
+    #Start epoch delta
+    i = 1
+    for e in epoch_pairs:
+        name = ag_name+ '_' + str(i)
+        nae.newDelataAnalysis(name, prior_epoch_uuid=e[0], later_epoch_uuid=e[1])
+        i = i + 1
+
 
 args= get_args()
 nae_password = getpass.getpass()
-
 #Create NAE Object
 nae = cnae.NAE (args.nae_ip)
 
@@ -226,8 +244,8 @@ for obj in requirement_sets:
 
 
 offline_analysis = [{"ag":"Can5", "filename": ["Can5-Epoch1.gz", "Can5-Epoch2.gz", "Can5-Epoch3.gz" ]},
-                    {"ag":"Segmentation", "filename": ["Segmentation_SLA_Epoch1.tar.gz", "Segmentation_SLA_Epoch2.tar.gz", "Segmentation_SLA_Epoch3.tar.gz", "Segmentation_SLA_Epoch4.gz" ]},
-                    {"ag":"Segmentation_SLA", "filename": ["Segmentation_Epoch1.tar.gz", "Segmentation_Epoch2.tar.gz", "Segmentation_Epoch3.tar.gz" ]}]
+                    {"ag":"Segmentation_SLA", "filename": ["Segmentation_SLA_Epoch1.tar.gz", "Segmentation_SLA_Epoch2.tar.gz", "Segmentation_SLA_Epoch3.tar.gz", "Segmentation_SLA_Epoch4.tar.gz" ]},
+                    {"ag":"Segmentation", "filename": ["Segmentation_Epoch1.tar.gz", "Segmentation_Epoch2.tar.gz", "Segmentation_Epoch3.tar.gz" ]}]
               
 #Load the list of Offline dataset
 nae.getFiles()
@@ -244,5 +262,9 @@ for ag in offline_analysis:
         fileID = str(next(item for item in nae.files if item["filename"] == f)['uuid'])
         #Start a new Offline Analysis
         nae.newOfflineAnalysis(offline_analysis_name, fileID, fabricID)
+
+# Create Delta Analysis:
+for ag in  offline_analysis:
+    deltaAnalysis(ag['unique_name'])
 
 

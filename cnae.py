@@ -183,7 +183,6 @@ class NAE:
         }'''
         url ='https://'+self.ip_addr+'/api/v1/event-services/offline-analysis'
         req = requests.post(url, data=form,  headers=self.http_header, cookies=self.session_cookie, verify=False)
-        pprint(req)
         if req.status_code == 202:
             self.logger.info("Offline Analysis %s Started", name)
         else:
@@ -256,4 +255,44 @@ class NAE:
            self.logger.info("Complianc Requirement Set created")
         else:
            self.logger.info("Complianc Requirement Set creation failed with error message \n %s",req.json())
-    
+   
+    def newDelataAnalysis(self,name, prior_epoch_uuid, later_epoch_uuid):
+        url = 'https://'+self.ip_addr+'/api/v1/job-services'
+        form = '''{
+               "type": "EPOCH_DELTA_ANALYSIS",
+               "name": "''' + name + '''",
+               "parameters": [
+                   {
+                       "name": "prior_epoch_uuid",
+                       "value": "''' + prior_epoch_uuid + '''"
+                   },
+                   {
+                       "name": "later_epoch_uuid",
+                       "value": "''' + later_epoch_uuid + '''"
+                   }
+                   ]
+               }'''
+        req = requests.post(url, data=form,  headers=self.http_header, cookies=self.session_cookie, verify=False)
+        if req.status_code == 202:
+           self.logger.info("Delta analysis %s created", name)
+        else:
+           self.logger.info("Delta analysis creation failed with error message \n %s",req.json())
+
+
+
+    def getEpochs(self, fabricName = None):
+        #Get all the epochs (sorted from oldest to new from a fabric. ToDo Add filter support based on times
+        url = u'https://'+self.ip_addr+'/api/v1/event-services/epochs?%24sort=collection_time'
+        if fabricName:
+            fabric = self.getAG(fabricName)            
+            url = url + '&%24fabric_id=' + str(fabric['uuid'])
+            self.logger.info("Getting Epochs for fabric %s", fabric['unique_name'])
+        else:
+             self.logger.info('Getting Epochs for all fabrics')
+             
+        req = requests.get(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        #return the Assurance Groups
+        return req.json()['value']['data']
+
+        
+
