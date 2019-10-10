@@ -368,9 +368,10 @@ class NAE:
         for ag in self.assuranceGroups:
             self.deleteAG(ag)
 
-        #Create a dummy AG to be able to then delete all the requirement sets (I found this faster than disassiciating the requires sets from every AG)
+        #Create a dummy AG to be able to then delete all the requirement sets (I found this faster than disassociating the requires sets from every AG)
         self.newOfflineAG("Dummy")
-        ag_uuid = self.getAG("Dummy")['uuid']
+        ag = self.getAG("Dummy")
+        ag_uuid = ag['uuid']
 
 
         for i in self.getAllReqSets():
@@ -384,7 +385,7 @@ class NAE:
 
         for i in self.getAllObjSelectors():
             self.deleteObjSelector(ag_uuid, i)
-
+        # Delete dummy AG
         for ag in self.assuranceGroups:
             self.deleteAG(ag)
 
