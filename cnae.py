@@ -35,9 +35,6 @@ class NAE:
         #Disable URL Lib Warnings
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-
-
-
     def login(self, user, password, domain):
         self.logger.debug("Log In to NAE")
     
@@ -77,6 +74,8 @@ class NAE:
         if req.status_code == 200:
             self.assuranceGroups = req.json()['value']['data']
             self.logger.debug("Update all the assurange groups data")
+        else:
+            self.logger.info("No Assurance Group are present")
             
     def getAG(self, name):
         self.getAllAG()
@@ -294,5 +293,98 @@ class NAE:
         #return the Assurance Groups
         return req.json()['value']['data']
 
-        
+    def getAllReqSets(self):
+        # Need to get an Assurange gropup to access requirement sets so I get the first one. 
+        ag = self.getFirstAG()
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirement-sets'
+        req = requests.get(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        return req.json()['value']['data']
+
+    def getAllReq(self):
+        # Need to get an Assurange gropup to access requirement sets so I get the first one. 
+        ag = self.getFirstAG()
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirements'
+        req = requests.get(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        return req.json()['value']['data']
+
+    def getAllTrafficSelectors(self):
+        # Need to get an Assurange gropup to access requirement sets so I get the first one. 
+        ag = self.getFirstAG()
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/traffic-selectors'
+        req = requests.get(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        return req.json()['value']['data']
+
+    def getAllObjSelectors(self):
+        # Need to get an Assurange gropup to access requirement sets so I get the first one. 
+        ag = self.getFirstAG()
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/object-selectors'
+        req = requests.get(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        return req.json()['value']['data']
+
+
+    def deleteAG(self, obj):
+        url = u'https://'+self.ip_addr+'/api/v1/config-services/assured-networks/aci-fabric/' + obj['uuid']
+        req = requests.delete(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        if req.status_code == 200:
+            self.logger.info("Deleted Assurance group %s", obj['unique_name'])
+        else:
+            self.logger.info("Deleting Assurance group %s failed with error %s",obj['unique_name'], req.json())
+
+    def deleteReqSet(self, ag_uuid, obj):
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/requirement-sets/'+obj['uuid']
+        req = requests.delete(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        if req.status_code == 200:
+            self.logger.info("Deleted Requirement Set %s", obj['name'])
+        else:
+            self.logger.info("Deleting Requirement Set %s failed with error %s",obj['name'], req.json())
+
+    def deleteReq(self, ag_uuid, obj):
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/requirements/'+obj['uuid']
+        req = requests.delete(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        if req.status_code == 200:
+            self.logger.info("Deleted Requirement %s", obj['name'])
+        else:
+            self.logger.info("Deleting Requirement %s failed with error %s",obj['name'], req.json())
+
+    def deleteObjSelector(self, ag_uuid, obj):
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/object-selectors/'+obj['uuid']
+        req = requests.delete(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        if req.status_code == 200:
+            self.logger.info("Deleted Object Selector %s", obj['name'])
+        else:
+            self.logger.info("Deleting Object Selector %s failed with error %s",obj['name'], req.json())
+
+    def deleteTrafficSelector(self, ag_uuid, obj):
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/traffic-selectors/'+obj['uuid']
+        req = requests.delete(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        if req.status_code == 200:
+            self.logger.info("Deleted traffic-selector %s", obj['name'])
+        else:
+            self.logger.info("Deleting traffic-selector %s failed with error %s",obj['name'], req.json())
+
+    def wipe(self, keep_offline_files):
+        #Delete all Assurance Groups
+        self.getAllAG()
+        for ag in self.assuranceGroups:
+            self.deleteAG(ag)
+
+        #Create a dummy AG to be able to then delete all the requirement sets (I found this faster than disassiciating the requires sets from every AG)
+        self.newOfflineAG("Dummy")
+        ag_uuid = self.getAG("Dummy")['uuid']
+
+
+        for i in self.getAllReqSets():
+            self.deleteReqSet(ag_uuid, i)
+
+        for i in self.getAllReq():
+            self.deleteReq(ag_uuid, i)
+       
+        for i in self.getAllTrafficSelectors():
+            self.deleteTrafficSelector(ag_uuid, i)
+
+        for i in self.getAllObjSelectors():
+            self.deleteObjSelector(ag_uuid, i)
+
+        for ag in self.assuranceGroups:
+            self.deleteAG(ag)
 
