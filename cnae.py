@@ -15,7 +15,14 @@ class NAE:
         self.session_cookie = {}
         self.assuranceGroups = {}
         self.files = {}
-        self.http_header = {'Host' : self.ip_addr,'Content-type':'application/json;charset=utf-8'}
+        self.http_header = {'Accept': 'application/json, text/plain, */*',
+                            'Accept-Encoding': 'gzip, deflate, br',
+                            'Accept-Language':'en-GB,en-US;q=0.9,en;q=0.8,it;q=0.7',
+                            'Sec-Fetch-Mode': 'cors',
+                            'Sec-Fetch-Site': 'same-origin',
+                            'Host' : self.ip_addr,
+                            'Content-type':'application/json;charset=utf-8', 
+                            }
         # create logger
         self.logger = logging.getLogger(__name__)
         
@@ -38,10 +45,12 @@ class NAE:
     def login(self, user, password, domain):
         self.logger.debug("Log In to NAE")
     
+        
         url = 'https://'+self.ip_addr+'/api/v1/whoami'
     
         req = requests.get(url, headers=self.http_header, verify=False)
         self.session_cookie['SESSION'] = req.cookies['SESSION']
+        self.session_cookie['SRVNAME'] = req.cookies['SRVNAME']
     
         url = 'https://'+self.ip_addr+'/api/v1/login'
     
@@ -242,9 +251,9 @@ class NAE:
         url ='https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirements'
         req = requests.post(url, data=form,  headers=self.http_header, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
-           self.logger.info("Complianc Requirement created")
+           self.logger.info("Compliance Requirement created")
         else:
-           self.logger.info("Complianc Requirement creation failed with error message \n %s",req.json())
+           self.logger.info("Compliance Requirement creation failed with error message \n %s",req.json())
 
     def newComplianceRequirementSet(self, form):
         ag = self.getFirstAG()
