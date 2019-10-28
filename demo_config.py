@@ -24,21 +24,23 @@ def get_args():
 def deltaAnalysis(ag_name):
     epochs = nae.getEpochs(ag_name)
     epochs_id = []
-    for e in epochs:
-        epochs_id.append(e['epoch_id'])
-    
-    #pair the epochs together and drop the last pair, I do not need newest-oldest epoch pair. 
-    #This creates one delta analysis between every epoch
-    epoch_pairs = (list(zip(epochs_id, epochs_id[1:] + epochs_id[:1])))
-    epoch_pairs.pop()
-    
-    #Start epoch delta
-    i = 1
-    for e in epoch_pairs:
-        name = ag_name+ '_' + str(i)
-        nae.newDelataAnalysis(name, prior_epoch_uuid=e[0], later_epoch_uuid=e[1])
-        i = i + 1
-
+    # Do a delta analysis only if there are 2+ epochs 
+    if len(epochs) >= 2:
+       for e in epochs:
+           epochs_id.append(e['epoch_id'])
+       
+       #pair the epochs together and drop the last pair, I do not need newest-oldest epoch pair. 
+       #This creates one delta analysis between every epoch
+       epoch_pairs = (list(zip(epochs_id, epochs_id[1:] + epochs_id[:1])))
+       epoch_pairs.pop()
+       
+       #Start epoch delta
+       i = 1
+       for e in epoch_pairs:
+           name = ag_name+ '_' + str(i)
+           nae.newDelataAnalysis(name, prior_epoch_uuid=e[0], later_epoch_uuid=e[1])
+           i = i + 1
+ 
 
 args= get_args()
 nae_password = getpass.getpass()

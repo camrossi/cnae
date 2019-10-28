@@ -15,6 +15,7 @@ class NAE:
         self.session_cookie = {}
         self.assuranceGroups = {}
         self.files = {}
+        self.version = ""
         self.http_header = {'Accept': 'application/json, text/plain, */*',
                             'Accept-Encoding': 'gzip, deflate, br',
                             'Accept-Language':'en-GB,en-US;q=0.9,en;q=0.8,it;q=0.7',
@@ -49,8 +50,8 @@ class NAE:
         url = 'https://'+self.ip_addr+'/api/v1/whoami'
     
         req = requests.get(url, headers=self.http_header, verify=False)
-        self.session_cookie['SESSION'] = req.cookies['SESSION']
-        self.session_cookie['SRVNAME'] = req.cookies['SRVNAME']
+        #Save all the cookies
+        self.session_cookie = req.cookies
     
         url = 'https://'+self.ip_addr+'/api/v1/login'
     
@@ -74,6 +75,16 @@ class NAE:
 
         #Remove the LOGIN-OTP from header, is only needed at the beginning 
         self.http_header.pop('X-NAE-LOGIN-OTP', None)
+
+        #Get NAE Version
+        url = 'https://'+self.ip_addr+'/api/v1/event-services/candid-version'
+        req = requests.get(url, headers=self.http_header, cookies=self.session_cookie, verify=False)
+        if req.status_code == 200:
+            self.version = req.json()['value']['data']['candid_version']
+            self.logger.info("NAE Version %s", self.version)
+        else:
+            self.logger.info("Unable to determine system version")
+            exit()
 
         
     #This method will get the list of all the assurance groups
@@ -189,12 +200,53 @@ class NAE:
           "aci_fabric_uuid": "''' + fabricID + '''",
           "analysis_timeout_in_secs": 3600
         }'''
-        url ='https://'+self.ip_addr+'/api/v1/event-services/offline-analysis'
-        req = requests.post(url, data=form,  headers=self.http_header, cookies=self.session_cookie, verify=False)
-        if req.status_code == 202:
-            self.logger.info("Offline Analysis %s Started", name)
+        
+        if '4.0' in self.version:
+            url ='https://'+self.ip_addr+'/api/v1/event-services/offline-analysis'
+            req = requests.post(url, data=form,  headers=self.http_header, cookies=self.session_cookie, verify=False)
+            if req.status_code == 202:
+                self.logger.info("Offline Analysis %s Started", name)
+            else:
+                self.logger.info("Offline Analysis creation failed with error message \n %s",req.content)
+
+        
+        elif '4.1' in self.version:
+            #in 4.1 starting an offline analysis is composed of 2 steps
+            # 1 Create the Offline analysis
+            url ='https://'+self.ip_addr+'/api/v1/config-services/offline-analysis'
+            req = requests.post(url, data=form,  headers=self.http_header, cookies=self.session_cookie, verify=False)
+            if req.status_code == 202:
+                self.logger.info("Offline Analysis %s Created", name)
+                pprint(req.json()['value']['data'])
+                #Get the analysis UUID:
+                analysis_id = req.json()['value']['data']['uuid']
+
+                url ='https://'+self.ip_addr+'/api/v1/config-services/analysis'
+
+                form = '''{
+                  "interval": 300,
+                  "type": "OFFLINE",
+                  "assurance_group_list": [
+                    {
+                      "uuid": "''' + fabricID + '''"
+                    }
+                  ],
+                  "offline_analysis_list": [
+                    {
+                      "uuid":"''' + analysis_id + '''" 
+                    }
+                  ],
+                  "iterations": 1
+                }'''
+
+                req = requests.post(url, data=form,  headers=self.http_header, cookies=self.session_cookie, verify=False)
+                if req.status_code == 202:
+                    self.logger.info("Offline Analysis %s Started", name)
+                else:
+                    self.logger.info("Offline Analysis creation failed with error message \n %s",req.content)
+
         else:
-            self.logger.info("Offline Analysis creation failed with error message \n %s",req.content)
+                self.logger.info("Offline Analysis creation failed with error message \n %s",req.content) 
 
     def getFiles(self):
         #This methods loads all the uploaded files to NAE
