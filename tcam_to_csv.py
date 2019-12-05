@@ -14,7 +14,7 @@ for page in tcam_data:
             if key == "bucket":
                 tdic['Provider EPG'] = value['provider_epg']['dn'].replace("uni/","")
                 tdic['Consumer VRF'] = value['consumer_vrf']['dn'].replace("uni/","")
-                tdic['Consumer EPG'] = value['consumer_epg']['name']
+                tdic['Consumer EPG'] = value['consumer_epg']['dn'].replace("uni/","")
                 tdic['Contract'] = value['contract']['dn'].replace("uni/","")
                 tdic['Filter'] =  value['filter']['dn'].replace("uni/","")
             if key == "output":
