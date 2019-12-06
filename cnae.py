@@ -341,17 +341,13 @@ class NAE:
 
 
 
-    def getEpochs(self, fabricName = None, pcv = False):
+    def getEpochs(self, fabricName, pcv = False):
         #Get all the epochs (sorted from oldest to new from a fabric. ToDo Add filter support based on times
         # By default I drop all the epoch of type Pre Change Verification. 
 
-        url = u'https://'+self.ip_addr+'/api/v1/event-services/epochs?%24sort=collection_time'
-        if fabricName:
-            fabric = self.getAG(fabricName)            
-            url = url + '&%24fabric_id=' + str(fabric['uuid'])
-            self.logger.info("Getting Epochs for fabric %s", fabric['unique_name'])
-        else:
-             self.logger.info('Getting Epochs for all fabrics')
+        fabric = self.getAG(fabricName)            
+        url =  u'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+str(fabric['uuid'])+'/epochs?$sort=collectionTimestamp'
+        self.logger.info("Getting Epochs for fabric %s", fabric['unique_name'])
              
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         #return all the the Epochs
@@ -478,6 +474,7 @@ class NAE:
     def getTcamStats(self,ag_name):
         fabric_id = str(self.getAG(ag_name)['uuid'])
         latest_epoch = self.getEpochs(ag_name)[-1]['epoch_id']
+        pprint(latest_epoch)
         page = 0
         objPerPage=200
         has_more_data = True
