@@ -474,7 +474,7 @@ class NAE:
     def getTcamStats(self,ag_name):
         fabric_id = str(self.getAG(ag_name)['uuid'])
         latest_epoch = self.getEpochs(ag_name)[-1]['epoch_id']
-        pprint(latest_epoch)
+        self.logger.debug("last epoch id is %s", latest_epoch)
         page = 0
         objPerPage=200
         has_more_data = True
@@ -496,7 +496,7 @@ class NAE:
             total_pages =  req.json()['value']['data_summary']['total_page_count']
             actual_page_size =  req.json()['value']['data_summary']['page_size']
             tcam_data.append((req.json()['value']['data']))
-            self.logger.info("Page %d/%d processed in %d secondsgb", page, total_pages, end - start)
+            self.logger.info("Page %d/%d processed in %d seconds", page, total_pages, end - start)
             self.logger.info("Requested Page size %d. Actual Page Size %d", objPerPage, actual_page_size)
         self.logger.info("Pages extracted %d", page)
         return tcam_data
