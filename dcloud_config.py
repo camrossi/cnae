@@ -2,7 +2,7 @@
 # I expect the appliance to be with no config, if an object already exist I will not update it, the object creation will just fail and I move on. 
 # To do: Move the configuration snippet outside of this file.
 import cnae
-iport logging
+import logging
 import time
 import argparse
 import getpass

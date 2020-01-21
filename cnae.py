@@ -8,7 +8,6 @@ import time
 import json
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from requests_toolbelt import MultipartEncoder
-from selenium import webdriver
 
 class NAE:
     def __init__(self, ip_addr):
