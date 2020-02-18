@@ -6,8 +6,13 @@ import json
 from pprint import pprint
 import time
 import json
+import parseJSON
+import time
+from pathlib import Path
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from requests_toolbelt import MultipartEncoder
+
+
 
 class NAE:
     def __init__(self, ip_addr):
@@ -73,7 +78,7 @@ class NAE:
         # Update with the authenticated Cookie
         self.session_cookie['SESSION'] = req.cookies['SESSION']
 
-        #Remove the LOGIN-OTP from header, is only needed at the beginning 
+        #Remove the LOGIN-OTP from header, it is only needed at the beginning 
         self.http_headers.pop('X-NAE-LOGIN-OTP', None)
 
         #Get NAE Version
@@ -149,7 +154,7 @@ class NAE:
     def isOnDemandAnalysis(self):
         self.getAllAG()
         for ag in self.assuranceGroups:
-            if ag['status'] == "RUNNING" and 'iterations' in ag:
+            if (ag['status'] == "RUNNING" or ag['status'] == "ANALYSIS_NOT_STARTED") and ('iterations' in ag):
                 self.logger.debug("There is a Running OnDemand Analysis on Assurance Group %s",ag['unique_name'])
                 return ag['unique_name']
             
@@ -240,7 +245,7 @@ class NAE:
                 }'''
 
                 req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
-                if req.status_code == 202:
+                if req.status_code == 202 or req.status_code == 200 :
                     self.logger.info("Offline Analysis %s Started", name)
                 else:
                     self.logger.info("Offline Analysis creation failed with error message \n %s",req.content)
@@ -316,7 +321,7 @@ class NAE:
         else:
            self.logger.info("Complianc Requirement Set creation failed with error message \n %s",req.json())
    
-    def newDelataAnalysis(self,name, prior_epoch_uuid, later_epoch_uuid):
+    def newDeltaAnalysis(self,name, prior_epoch_uuid, later_epoch_uuid):
         url = 'https://'+self.ip_addr+'/api/v1/job-services'
         form = '''{
                "type": "EPOCH_DELTA_ANALYSIS",
@@ -340,7 +345,8 @@ class NAE:
 
 
 
-    def getEpochs(self, fabricName, pcv = False):
+    def getEpochs(self, fabricName, pcv = True):
+        print("Getting Epochs....")
         #Get all the epochs (sorted from oldest to new from a fabric. ToDo Add filter support based on times
         # By default I drop all the epoch of type Pre Change Verification. 
 
@@ -430,45 +436,119 @@ class NAE:
         else:
             self.logger.info("Deleting traffic-selector %s failed with error %s",obj['name'], req.json())
 
-    def createPreChange(self, ag_name, name, config):
-        url = 'https://'+self.ip_addr+'/api/v1/config-services/prechange-analysis'
+    def sendNewPreChangePayload(self, manual_flag, file_flag, file_content,changes, ag_name,name, description):
+        config = []
+        f = None
         fabric_id = str(self.getAG(ag_name)['uuid'])
-        latest_epoch = self.getEpochs(ag_name)[-1]['epoch_id']
+        base_epoch_id = self.getEpochs(ag_name,False)[-1]["epoch_id"]
+        if(manual_flag):
+            config = changes
+        if(file_flag):
+            f = file_content
         fields = {
-                
-                # The name of the file upload field... Not the file name                
                 ('data', 
-                    # This would be the name of the file. None because I am not passing a file 
-                    (None,
-                       
+                    (f,
+                    
                         # content to upload 
                             '''{
-                                  "name": "''' + name + '''",
-                                  "fabric_uuid": "''' + fabric_id + '''",
-                                  "base_epoch_id": "''' + latest_epoch + '''",
-                                  
-                                  "changes": [
-                                    ''' + config + '''
-                                  ],
-                                  "stop_analysis": false,
-                                  "change_type": "CHANGE_LIST"
+                                "name": "''' + name + '''",
+                                "fabric_uuid": "''' + fabric_id + '''",
+                                "base_epoch_id": "''' + base_epoch_id + '''",
+                                
+                                "changes": ''' + str(config) + ''',
+                                "stop_analysis": false,
+                                "change_type": "CHANGE_LIST"
                                 }'''
-                         # The content type of the file
+                        # The content type of the file
                         , 'application/json'))
-                  }
-
+                }
+        url = 'https://'+self.ip_addr+'/api/v1/config-services/prechange-analysis'  
         m = MultipartEncoder(fields=fields)
         #Replace the normal 'Content-Type':'application/json;charset=utf-8' with the multipart/form-data and the boundary 
         h = self.http_headers
         h['Content-Type']= m.content_type
         req = requests.post(url, data=m,  headers=h, cookies=self.session_cookie, verify=False) 
         if req.status_code == 200:
-            self.logger.info("Created PreChange Job")
+            self.logger.info('Pre-Change analysis "' + name + '" created.')
         else:
-            self.logger.info("Error %s", req.content)
+            self.logger.info("Error %s", req.content)     
+    
+    # def createNewUploadOfflineManagement(self):
 
-    def getPreChangeResult(self,name):
-        pass    
+
+        
+
+    def createPreChange(self, ag_name,name,description,interactive_flag,changes,file_path):
+        if(interactive_flag):
+                name = input("Enter name for new Pre-Change Analysis: \n====> ")
+                user_input = input("Enter relative path to file. Accepted file formats are JSON and XML: \n====> ")
+                assert os.path.exists(user_input), "File not found, "+str(user_input)
+                f = open(user_input,"rb")
+                self.sendNewPreChangePayload(False,True,f,changes,ag_name,name,description)
+        elif(changes):
+            self.sendNewPreChangePayload(True,False,None,changes,ag_name,name,description)
+        elif(file_path):
+            assert os.path.exists(file_path), "File not found, "+str(file_path)
+            f = open(file_path,"rb")
+            self.sendNewPreChangePayload(False,True,f,changes,ag_name,name,description)
+
+
+
+
+    def getPreChangeAnalyses(self, ag_name, out_flag):
+        fabric_id = str(self.getAG(ag_name)['uuid'])
+        url = 'https://'+self.ip_addr+'/nae/api/v1/config-services/prechange-analysis?fabric_id='+fabric_id
+        response = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
+        if(out_flag):
+            parseJSON.getAnalyses(response)
+        return response.json()['value']['data']
+        
+    def deletePreChangeAnalysis(self,ag_name,pre_change_analysis_name):
+        job_id = str(self.getPreChangeAnalysis(ag_name,pre_change_analysis_name)['job_id'])
+        url = 'https://'+self.ip_addr+'/nae/api/v1/config-services/prechange-analysis/'+job_id
+        response = requests.delete(url,headers=self.http_headers, cookies=self.session_cookie, verify=False)
+        return response.json()['value']['data']
+
+    def getPreChangeAnalysis(self, ag_name, pre_change_analysis_name):
+        ret = self.getPreChangeAnalyses(ag_name,False)
+        for a in ret:
+            if a['name'] == pre_change_analysis_name:
+                return a
+        return None
+    
+    def getPreChangeResult(self,ag_name, pre_change_analysis_name, verbose_flag): 
+        fabric_id = str(self.getAG(ag_name)['uuid'])
+        early_epoch_id = str(self.getPreChangeAnalysis(ag_name,pre_change_analysis_name)['base_epoch_id'])
+        epoch_delta_job_id = str(self.getPreChangeAnalysis(ag_name,pre_change_analysis_name)['epoch_delta_job_id'])
+        # print(str(self.getPreChangeAnalysis(ag_name,pre_change_analysis_name)['epoch_delta_job_id']))
+        analysis_status = str(self.getPreChangeAnalysis(ag_name,pre_change_analysis_name)['analysis_status'])
+        #if(analysis_status == "SUBMITTTED"):
+        #    self.logger.info("Pre-change analysis " + pre_change_analysis_name + " not completed. Status: Submitted.")
+        #    return "SUBMITTTED"
+        #if(analysis_status == "RUNNING"):
+        #    self.logger.info("Pre-change analysis " + pre_change_analysis_name + " not completed. Status: Running.")
+        #    return "RUNNING"
+        if analysis_status == "COMPLETED":
+            later_epoch_id = str(self.getPreChangeAnalysis(ag_name,pre_change_analysis_name)['pre_change_epoch_uuid'])
+            analysis_id = str(self.getPreChangeAnalysis(ag_name,pre_change_analysis_name)['epoch_delta_job_id'])
+            no_response = False
+            url = 'https://'+self.ip_addr+'/nae/api/v1/epoch-delta-services/assured-networks/'+fabric_id+'/job/'+analysis_id+'/health/view/event-severity'
+            url_later = 'https://'+self.ip_addr+'/nae/api/v1/epoch-delta-services/assured-networks/'+fabric_id+'/job/'+epoch_delta_job_id+'/health/view/aggregate-table?category=ADC,CHANGE_ANALYSIS,TENANT_ENDPOINT,TENANT_FORWARDING,TENANT_SECURITY,RESOURCE_UTILIZATION,SYSTEM,COMPLIANCE&epoch_status=EPOCH2_ONLY&severity=EVENT_SEVERITY_CRITICAL,EVENT_SEVERITY_MAJOR,EVENT_SEVERITY_MINOR,EVENT_SEVERITY_WARNING,EVENT_SEVERITY_INFO'
+            response = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
+            response_later = requests.get(url_later, headers=self.http_headers, cookies=self.session_cookie, verify=False)      
+            response = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
+            self.logger.info("<======== SMART EVENT COUNT ========>")
+            if(verbose_flag):
+                table_url = 'https://'+self.ip_addr+'/nae/api/v1/epoch-delta-services/assured-networks/'+fabric_id+'/job/'+analysis_id+'/health/view/aggregate-table'
+                table_response = requests.get(table_url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
+                parse_table = parseJSON.Parser(response)
+                return parse_table.ParsePreChangeResults(response_later,parse_table.obj,pre_change_analysis_name,verbose_flag,table_response,early_epoch_id,later_epoch_id)
+            parse = parseJSON.Parser(response)
+            return parse.ParsePreChangeResults(response_later,parse.obj,pre_change_analysis_name,verbose_flag,no_response,early_epoch_id,later_epoch_id)
+        else:
+            self.logger.info("Pre-change analysis " + pre_change_analysis_name + " not completed")
+            return "RUNNING"
+       
 
     def getTcamStats(self,ag_name):
         fabric_id = str(self.getAG(ag_name)['uuid'])

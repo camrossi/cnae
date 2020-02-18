@@ -222,7 +222,7 @@ for obj in requirement_sets:
 
 
 offline_analysis = [{"ag":"Segmentation Compliance", "filename": ["Segmentation_Epoch1.tar.gz", "Segmentation_Epoch2.tar.gz", "Segmentation_Epoch3.tar.gz" ]},
-                    {"ag":"Config Compliance", "filename": ["Config Compliance.gz"]},
+                    {"ag":"Config Compliance", "filename": ["Config_Compliance.tar.gz"]},
                     {"ag":"Change Management", "filename": ["ChangeMgmt.tar.gz"]},
                     {"ag":"Data Center Operations", "filename": ["DCOperations.tar.gz"]},
                     {"ag":"Epoch Analysis", "filename": ["EpochDelta.tar.gz"]},
