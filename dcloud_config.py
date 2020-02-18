@@ -57,6 +57,7 @@ nae.newOfflineAG("Migration")
 nae.newOfflineAG("Epoch Analysis")
 nae.newOfflineAG("Segmentation Compliance")
 nae.newOfflineAG("Config Compliance")
+nae.newOfflineAG("Can5")
 
 
 
@@ -226,6 +227,7 @@ offline_analysis = [{"ag":"Segmentation Compliance", "filename": ["Segmentation_
                     {"ag":"Change Management", "filename": ["ChangeMgmt.tar.gz"]},
                     {"ag":"Data Center Operations", "filename": ["DCOperations.tar.gz"]},
                     {"ag":"Epoch Analysis", "filename": ["EpochDelta.tar.gz"]},
+                    {"ag":"Can5", "filename": ["Can5-Epoch1.tar.gz", "Can5-Epoch2.tar.gz", "Can5-Epoch3.tar.gz"]},
                     {"ag":"Migration", "filename": ["Migrations.tar.gz"]}
                     ]
 #Load the list of Offline dataset
