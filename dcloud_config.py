@@ -38,7 +38,7 @@ def deltaAnalysis(ag_name):
        i = 1
        for e in epoch_pairs:
            name = ag_name+ '_' + str(i)
-           nae.newDelataAnalysis(name, prior_epoch_uuid=e[0], later_epoch_uuid=e[1])
+           nae.newDeltaAnalysis(name, prior_epoch_uuid=e[0], later_epoch_uuid=e[1])
            i = i + 1
 
 
