@@ -553,6 +553,7 @@ class NAE:
     def getTcamStats(self,ag_name):
         fabric_id = str(self.getAG(ag_name)['uuid'])
         latest_epoch = self.getEpochs(ag_name)[-1]['epoch_id']
+        #latest_epoch = "737ea995-b313f61d-6e6f-3971-9b34-809269d6a693"
         self.logger.debug("last epoch id is %s", latest_epoch)
         page = 0
         objPerPage=200
