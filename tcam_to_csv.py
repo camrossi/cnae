@@ -28,14 +28,17 @@ for page in tcam_data:
                 tdic['Contract'] = value['contract']['dn'].replace("uni/","")
                 tdic['Filter'] =  value['filter']['dn'].replace("uni/","")
             if key == "output":
-                tdic["Month Hit Count"] = value['month_count']
+                if 'month_count' in value:
+                    tdic["Monthly Hits"] = value['month_count']
+                else:
+                     tdic["Monthly Hits"] = "N/A"
                 tdic['Total Hits'] =  value['cumulative_count']
                 tdic['TCAM Usage'] = value['tcam_entry_count']
         tcam_stats.append(tdic)
 
 outFileName = args.inputFile.split('.')[0] + '.csv' 
 with open(outFileName, 'w', newline='') as file:
-    fieldnames = ['Provider EPG', 'Consumer EPG', 'Consumer VRF','Contract','Filter','Montly Hits', 'Total Hits','TCAM Usage']
+    fieldnames = ['Provider EPG', 'Consumer EPG', 'Consumer VRF','Contract','Filter','Monthly Hits', 'Total Hits','TCAM Usage']
     writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
     for i in tcam_stats:
