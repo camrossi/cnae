@@ -1,4 +1,7 @@
+import hashlib
 import requests
+import filelock 
+import pathlib
 import sys
 import os
 import logging
@@ -247,6 +250,8 @@ class NAE:
                 req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
                 if req.status_code == 202 or req.status_code == 200 :
                     self.logger.info("Offline Analysis %s Started", name)
+                    #Sleeping 10s as it takes a moment for the status to be updated. 
+                    time.sleep(10)
                 else:
                     self.logger.info("Offline Analysis creation failed with error message \n %s",req.content)
 
@@ -608,3 +613,193 @@ class NAE:
         for ag in self.assuranceGroups:
             self.deleteAG(ag)
 
+    def get_logout_lock(self):
+        # This lock has been introduced because logout and file upload cannot be
+        # done in parallel. This is because logout incorrectly aborts all file
+        # uploads by a user (not just that session). So, this lock must be
+        # acquired for logout and file upload.
+        lock_filename = "logout.lock"
+        try:
+            pathlib.Path(lock_filename).touch(exist_ok=False)
+        except OSError:
+            pass
+        return filelock.FileLock(lock_filename)
+
+    def upload_file(self, unique_name, file_path, fabric_uuid=None):
+        file_upload_uuid = None
+        uri = 'https://'+self.ip_addr + "/api/v1/file-services/upload-file"
+        try:
+            with self.get_logout_lock():
+                chunk_url = self.start_upload(unique_name, file_path, uri, 'OFFLINE_ANALYSIS', fabric_uuid)
+                complete_url = None
+                if chunk_url:
+                    complete_url = self.upload_file_by_chunk(chunk_url, file_path)
+                else:
+                    self.logger.error("Failed to start upload")
+                if complete_url:
+                    self.logger.info("Complete Url {} ".format(complete_url))
+                    file_upload_uuid = self.complete_upload(complete_url)['uuid']
+                else:
+                    self.logger.error("Failed to upload file chunks.")
+            return file_upload_uuid
+        except Exception as e:
+            print("some error occoured while uploading file")
+            exc_type, exc_obj, tb = sys.exc_info()
+            #self.logger.error(PrintException.printException(exc_type, exc_obj, tb))
+            #print((PrintException.printException(exc_type, exc_obj, tb)))
+            raise e
+
+        return all_files_status
+
+    def start_upload(self, unique_name, file_path, uri, upload_type, fabric_uuid=None, file_name=None):
+        """
+        Pass metadata to api and trigger start of upload file.
+
+        Args:
+            unique_name: str: name of upload
+            file_name:  str:  file name of upload
+            file_path:  str: path of file
+            fabric_uuid: str: offline fabric id
+            uri: str: uri
+            upload_type: str: offline file/nat file
+        Returns:
+            str: chunk url , used for uploading chunks
+                  or None if there was an issue starting
+        """
+        file_size_in_bytes = os.path.getsize(file_path)
+        if not file_name:
+            file_name = os.path.basename(file_path)
+        args = {"data": {"unique_name": unique_name,
+                         "filename": file_name,
+                         "size_in_bytes": int(file_size_in_bytes),
+                         "upload_type": upload_type}}  # "OFFLINE_ANALYSIS"
+        response = requests.post(uri, data=json.dumps(args['data']), headers=self.http_headers,cookies=self.session_cookie, verify=False)
+        if response and response.status_code == 201:
+            print((str(response.json()['value']['data']['links'][-1]['href'])))
+            return str(response.json()['value']['data']['links'][-1]['href'])
+        self.logger.error("Failed to start upload of file {}".format(file_path))
+        return None
+
+    def upload_file_by_chunk(self, chunk_url, file_path):
+        """Pass metadata to api and trigger start of upload file.
+
+        Args:
+           chunk_url: str: url to send chunks
+           file_path: str: path of file and filename
+
+        Returns:
+            str: chunk url , used for uploading chunks or None if issue uploading
+        """
+        try:
+            chunk_id = 0
+            offset = 0
+            self.logger.info("chunk_id:{}".format(chunk_id))
+            self.logger.info("offset:{}".format(offset))
+            chunk_uri = 'https://'+self.ip_addr + chunk_url[chunk_url.index('/api/'):]
+            self.logger.info("chunk_uri:{}".format(chunk_uri))
+            response = None
+            file_size_in_bytes = os.path.getsize(file_path)
+            self.logger.info("file_path:{}".format(file_path))
+            self.logger.info("file_size_in_bytes:{}".format(file_size_in_bytes))
+            chunk_byte_size = 10000000
+            if file_size_in_bytes < chunk_byte_size:
+                chunk_byte_size = int(file_size_in_bytes // 2)
+            with open(file_path, 'rb') as f:
+                for chunk in self.read_in_chunks(f, chunk_byte_size):
+                    checksum = hashlib.md5(chunk).hexdigest()
+                    chunk_info = {"offset": int(offset),
+                                  "checksum": checksum,
+                                  "chunk_id": chunk_id,
+                                  "size_in_bytes": sys.getsizeof(chunk)}
+                    files = {"chunk-info": (None, json.dumps(chunk_info),
+                                            'application/json'),
+                             "chunk-data": (os.path.basename(file_path) +
+                                            str(chunk_id),
+                                            chunk, 'application/octet-stream')}
+                    args = {"files": files}
+                    chunk_headers = self.http_headers.copy()
+                    chunk_headers.pop("Content-Type",None)
+                    response = requests.post(chunk_uri, data = None, files=args['files'], headers=chunk_headers,cookies=self.session_cookie, verify=False)
+                  #  response = self.post(chunk_uri, **args)
+                    chunk_id += 1
+                    if response and response.status_code != 201:
+                        self.logger.error(
+                            "Incorrect response code: {} ".format(response.json()))
+                        return None
+                if response:
+                    self.logger.info("upload {}".format(response.text))
+                    return str(response.json()['value']['data']['links'][-1]['href'])
+                else:
+                    print("no response received while uploading chuks")
+                    print(response.text)
+                    self.logger.error('no response received while uploading chunks')
+        except IOError:
+            self.logger.error("Cannot open: {}".format(file_path))
+        return None
+
+    def read_in_chunks(self, file_object, chunk_byte_size):
+        """
+        Return chunks of file.
+
+        Args:
+           file_object: file: open file object
+           chunk_byte_size: int: size of chunk to return
+
+        Returns:
+            Returns a chunk of the file
+        """
+        while True:
+            data = file_object.read(chunk_byte_size)
+            if not data:
+                break
+            yield data
+
+    def complete_upload(self, complete_url):
+        """Complete request to start dag.
+
+        Args:
+           chunk_url: str: url to complte upload and start dag
+
+        Returns:
+            str: uuid or None
+
+        NOTE: Modified function to not fail if epoch is at scale.
+        Scale epochs sometimes take longer to upload and in that
+        case, the api returns a timeout even though the upload
+        completes successfully later.
+        """
+        timeout = 300
+        complete_uri = 'https://'+self.ip_addr + complete_url[complete_url.index('/api/'):]
+        #response = self.post(complete_uri, timeout=240)
+        response = requests.post(complete_uri, headers=self.http_headers,cookies=self.session_cookie, verify=False)
+        try:
+            if response and response.status_code == 200:
+                self.logger.info("complete_upload response {}".format(
+                                    str(response.json())))
+                return response.json()['value']['data']
+            elif not response or response.status_code == 400:
+                self.logger.info('hit the case when complete timed out. Will busy wait checking status till timeout')
+                total_time = 0
+                while total_time < timeout:
+                    time.sleep(10)
+                    total_time += 10
+                    response = self.get('https://'+self.ip_addr + '/api/v1/file-services/upload-file')
+                    if response and response.status_code == 200:
+                        resp = response.json()
+                        uuid = complete_url.split('/')[-2]
+                        for offline_file in resp['value']['data']:
+                            if offline_file['uuid'] == uuid:
+                                success = offline_file['status'] == 'UPLOAD_COMPLETED'
+                                if success:
+                                    self.logger.info('finally completed scale epoch successfully')
+                                    return {'uuid': offline_file['uuid']}
+
+            # IF I REACHED HERE... SOMETHING IS WRONG
+            self.logger.info('no upload completed')
+            raise Exception
+        except Exception as e:
+            print("some error occoured while completing the upload")
+            exc_type, exc_obj, tb = sys.exc_info()
+            #self.logger.error(PrintException.printException(exc_type, exc_obj, tb))
+            #print((PrintException.printException(exc_type, exc_obj, tb)))
+            raise e

@@ -43,7 +43,8 @@ def deltaAnalysis(ag_name):
 
 
 args= get_args()
-nae_password = getpass.getpass()
+nae_password = "C@ndidadmin1234"
+#nae_password = getpass.getpass()
 #Create NAE Object
 nae = cnae.NAE (args.nae_ip)
 
@@ -150,30 +151,28 @@ compliance_requirements = [
 '''
                             {
                                   "name": "Segmentation",
-                                  "config_compliance_parameter": {
-                                    "and_list_list": [],
-                                    "or_list_list": []
-                                  },
-                                  "epgselector_a": "FrontEnd",
-                                  "epgselector_b": "DataBase",
-                                  "requirementType": "SEGMENTATION",
-                                  "communicationType": "MUST_NOT",
-                                  "isAllTraffic": false
+                                  "config_compliance_parameter": {},
+                                  "epg_selector_a": "FrontEnd",
+                                  "epg_selector_b": "DataBase",
+                                  "requirement_type": "SEGMENTATION",
+                                  "communication_type": "MUST_NOT",
+                                  "enable_aggregate_event_for_tenant": false,
+                                  "is_all_traffic": false
                             }''','''
                             {
                               "name": "BD Config Requirement",
-                              "requirementType": "CONFIGURATION_COMPLIANCE",
-                              "epgselector_a": "BDs In Common",
+                              "requirement_type": "CONFIGURATION_COMPLIANCE",
+                              "epg_selector_a": "BDs In Common",
                               "config_compliance_parameter": {
-                                "and_list_list": [
+                                "and_parameters": [
                                   {
                                     "parameter": "CCP_L2_UNKNOWN_UNICAST",
-                                    "string_value": "Hardware Proxy",
+                                    "value": "Hardware Proxy",
                                     "operator": "EQUAL_TO"
                                   },
                                   {
                                     "parameter": "CCP_LIMIT_IP_LEARNING_TO_SUBNET",
-                                    "string_value": "Yes",
+                                    "value": "Yes",
                                     "operator": "EQUAL_TO"
                                   }
                                 ]
@@ -228,6 +227,15 @@ offline_analysis = [{"ag":"Segmentation Compliance", "filename": ["Segmentation_
                     {"ag":"Epoch Analysis", "filename": ["EpochDelta.tar.gz"]},
                     {"ag":"Migration", "filename": ["Migrations.tar.gz"]}
                     ]
+
+#can be any existing AG
+ag_uuid  = nae.getAG('Segmentation Compliance')
+
+for oa in offline_analysis:
+    for f in oa["filename"]:
+        print(f)
+        unique_name = f.strip().split("/")[-1]
+        nae.upload_file(unique_name,f , fabric_uuid=ag_uuid)
 #Load the list of Offline dataset
 nae.getFiles()
 
