@@ -29,7 +29,8 @@ class NAE:
                             'Accept-Language':'en-GB,en-US;q=0.9,en;q=0.8,it;q=0.7',
                             'Sec-Fetch-Mode': 'cors',
                             'Sec-Fetch-Site': 'same-origin',
-                            'Host' : self.ip_addr,
+                            #'Host' : self.ip_addr,
+                             'Host' : '10.66.176.111',
                             'Content-Type':'application/json;charset=utf-8', 
                             }
         # create logger
@@ -56,8 +57,8 @@ class NAE:
     
         
         url = 'https://'+self.ip_addr+'/api/v1/whoami'
-    
         req = requests.get(url, headers=self.http_headers, verify=False)
+        pprint(req.text)
         #Save all the cookies
         self.session_cookie = req.cookies
     
@@ -157,7 +158,7 @@ class NAE:
     def isOnDemandAnalysis(self):
         self.getAllAG()
         for ag in self.assuranceGroups:
-            if (ag['status'] == "RUNNING" or ag['status'] == "ANALYSIS_NOT_STARTED") and ('iterations' in ag):
+            if (ag['status'] == "RUNNING" or ag['status'] == "ANALYSIS_NOT_STARTED" or ag['status'] == "ANALYSIS_IN_PROGRESS")  and ('iterations' in ag):
                 self.logger.debug("There is a Running OnDemand Analysis on Assurance Group %s",ag['unique_name'])
                 return ag['unique_name']
             
@@ -218,7 +219,7 @@ class NAE:
                 self.logger.info("Offline Analysis creation failed with error message \n %s",req.content)
 
         
-        elif '4.1' in self.version:
+        elif '4.1' in self.version or '5.0' in  self.version:
             #in 4.1 starting an offline analysis is composed of 2 steps
             # 1 Create the Offline analysis
             url ='https://'+self.ip_addr+'/api/v1/config-services/offline-analysis'
