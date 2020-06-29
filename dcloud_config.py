@@ -51,6 +51,7 @@ nae = cnae.NAE (args.nae_ip)
 #Log in to NAE with user and password
 nae.login(args.user, nae_password,args.domain)
 
+
 #Create assurange Groups
 nae.newOfflineAG("Change Management")
 nae.newOfflineAG("Data Center Operations")
@@ -231,11 +232,14 @@ offline_analysis = [{"ag":"Segmentation Compliance", "filename": ["Segmentation_
 #can be any existing AG
 ag_uuid  = nae.getAG('Segmentation Compliance')
 
+
 for oa in offline_analysis:
     for f in oa["filename"]:
         print(f)
         unique_name = f.strip().split("/")[-1]
-        nae.upload_file(unique_name,f , fabric_uuid=ag_uuid)
+
+        #I get the major version of NAE and expect the files to be in the right folder 4.1 for NAE 4.1.x and 5.0 for NAE 5.0.x
+        nae.upload_file(unique_name, nae.version[0:3] + "/" + f, fabric_uuid=ag_uuid)
 #Load the list of Offline dataset
 nae.getFiles()
 
