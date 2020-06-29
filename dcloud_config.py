@@ -59,6 +59,7 @@ nae.newOfflineAG("Epoch Analysis")
 nae.newOfflineAG("Segmentation Compliance")
 nae.newOfflineAG("Config Compliance")
 nae.newOfflineAG("Pre Change Verification")
+nae.newOfflineAG("Fab5")
 
 object_selectors=[
                   '''{
@@ -210,20 +211,20 @@ requirement_sets = [
                           
                         }
                       ],
-                      "description": null
+            description          "description": null
                     }'''
                    ]
 
 for obj in requirement_sets:
     nae.newComplianceRequirementSet(obj)
 
-
 offline_analysis = [{"ag":"Segmentation Compliance", "filename": ["Segmentation_Epoch1.tar.gz", "Segmentation_Epoch2.tar.gz", "Segmentation_Epoch3.tar.gz" ]},
                     {"ag":"Config Compliance", "filename": ["Config_Compliance.tar.gz"]},
                     {"ag":"Change Management", "filename": ["ChangeMgmt.tar.gz"]},
                     {"ag":"Data Center Operations", "filename": ["DCOperations.tar.gz"]},
                     {"ag":"Epoch Analysis", "filename": ["EpochDelta.tar.gz"]},
-                    {"ag":"Pre Change Verification", "filename": ["Segmentation_Epoch1.tar.gz"]},
+                    {"ag":"Fab5", "filename": ["Can5_mod28_withAuditLog.tar.gz"]},
+                    {"ag":"Pre Change Verification", "filename": ["Pre Change Verification.tar.gz"]},
                     {"ag":"Migration", "filename": ["Migrations.tar.gz"]}
                     ]
 
@@ -254,3 +255,49 @@ for ag in offline_analysis:
 # Create Delta Analysis:
 for ag in  offline_analysis:
     deltaAnalysis(str(nae.getAG(ag['ag'])['unique_name']))
+
+# Create PCV
+
+changes =[  '''   {
+      "bd_change": {
+        "action": "ADD",
+        "dn": "uni/tn-NAE_Compliance/BD-BD2",
+        "optimize_wan_bandwidth": "no",
+        "type": "regular",
+        "arp_flood": "no",
+        "ip_learning": "yes",
+        "limit_ip_learn_to_subnets": "yes",
+        "unk_mac_ucast_act": "proxy",
+        "unicast_route": "yes",
+        "multi_dst_pkt_act": "bd-flood",
+        "unk_mcast_act": "flood",
+        "multi_cast_allow": "no",
+        "vrf_name": "VRF1"
+      }
+    },
+    {
+      "network_subnet_change": {
+        "action": "ADD",
+        "dn": "uni/tn-NAE_Compliance/BD-BD2/subnet-192.168.1.1/16",
+        "scope": "private",
+        "make_this_primary_ip_address": "no",
+        "treat_as_virtual_ip_address": "no",
+        "subnet_control": "nd"
+      }
+    },
+    {
+      "epg_change": {
+        "action": "ADD",
+        "dn": "uni/tn-NAE_Compliance/ap-ComplianceIsGood/epg-PreProdDB",
+        "consumed_contract_names": [],
+        "provided_contract_names": [
+          "WS_To_DB"
+        ],
+        "taboo_contract_names": [],
+        "pc_enf_pref": "enforced",
+        "pref_gr_memb": "exclude",
+        "bd_name": "BD2"
+      }
+    }''']
+nae.newManualPCV(changes = changes,ag_name="Pre Change Verification",name="Add_BD_EPG_NotOK", description="dCloud Demo")
+

@@ -56,13 +56,13 @@ class NAE:
         self.logger.debug("Log In to NAE")
     
         
-        url = 'https://'+self.ip_addr+'/api/v1/whoami'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/whoami'
         req = requests.get(url, headers=self.http_headers, verify=False)
         pprint(req.text)
         #Save all the cookies
         self.session_cookie = req.cookies
     
-        url = 'https://'+self.ip_addr+'/api/v1/login'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/login'
     
         self.http_headers['X-NAE-LOGIN-OTP'] = req.headers['X-NAE-LOGIN-OTP']
         
@@ -86,7 +86,7 @@ class NAE:
         self.http_headers.pop('X-NAE-LOGIN-OTP', None)
 
         #Get NAE Version
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/candid-version'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/candid-version'
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
             self.version = req.json()['value']['data']['candid_version']
@@ -98,7 +98,7 @@ class NAE:
         
     #This method will get the list of all the assurance groups
     def getAllAG(self): 
-        url = 'https://'+self.ip_addr+'/api/v1/config-services/assured-networks/aci-fabric/'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/config-services/assured-networks/aci-fabric/'
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
             self.assuranceGroups = req.json()['value']['data']
@@ -123,7 +123,7 @@ class NAE:
     def newOfflineAG(self, name):
         # This method creates a new Offline Assurance Group, you only need to pass the AG Name.
 
-        url=  'https://'+self.ip_addr+'/api/v1/config-services/assured-networks/aci-fabric/'
+        url=  'https://'+self.ip_addr+'/nae/api/v1/config-services/assured-networks/aci-fabric/'
 
         form ='''{
           "analysis_id": "",
@@ -186,7 +186,7 @@ class NAE:
 
 
             ag_iterations = json.dumps({'iterations': iterations})
-            url = 'https://'+self.ip_addr+'/api/v1/config-services/assured-networks/aci-fabric/'+ag['uuid']+'/start-analysis'
+            url = 'https://'+self.ip_addr+'/nae/api/v1/config-services/assured-networks/aci-fabric/'+ag['uuid']+'/start-analysis'
             req = requests.post(url, data=ag_iterations, headers=self.http_headers,cookies=self.session_cookie, verify=False)
             if req.status_code == 200:
                 self.logger.info('Successfully started OnDemand Analysis on %s', ag_name)
@@ -211,7 +211,7 @@ class NAE:
         }'''
         
         if '4.0' in self.version:
-            url ='https://'+self.ip_addr+'/api/v1/event-services/offline-analysis'
+            url ='https://'+self.ip_addr+'/nae/api/v1/event-services/offline-analysis'
             req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
             if req.status_code == 202:
                 self.logger.info("Offline Analysis %s Started", name)
@@ -222,7 +222,7 @@ class NAE:
         elif '4.1' in self.version or '5.0' in  self.version:
             #in 4.1 starting an offline analysis is composed of 2 steps
             # 1 Create the Offline analysis
-            url ='https://'+self.ip_addr+'/api/v1/config-services/offline-analysis'
+            url ='https://'+self.ip_addr+'/nae/api/v1/config-services/offline-analysis'
             req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
             if req.status_code == 202:
                 self.logger.info("Offline Analysis %s Created", name)
@@ -230,7 +230,7 @@ class NAE:
                 #Get the analysis UUID:
                 analysis_id = req.json()['value']['data']['uuid']
 
-                url ='https://'+self.ip_addr+'/api/v1/config-services/analysis'
+                url ='https://'+self.ip_addr+'/nae/api/v1/config-services/analysis'
 
                 form = '''{
                   "interval": 300,
@@ -261,7 +261,7 @@ class NAE:
 
     def getFiles(self):
         #This methods loads all the uploaded files to NAE
-        url = 'https://'+self.ip_addr+'/api/v1/file-services/upload-file'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/file-services/upload-file'
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         self.files = req.json()['value']['data']
 
@@ -271,7 +271,7 @@ class NAE:
 
     def getApplianceID(self):
         # Get Appliance ID
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/candid-version'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/candid-version'
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         return req.json()['value']['data']['candid_appliance_id'].strip()
 
@@ -285,7 +285,7 @@ class NAE:
         # Get all object selectors and return them as a dictionary
         ag = self.getAG(ag_name)
         #Get the list of Object Selectors 
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/' + ag + '/model/aci-policy/compliance-requirement/object-selectors'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/' + ag + '/model/aci-policy/compliance-requirement/object-selectors'
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         os_list = req.response()
         pprint(os_list)
@@ -293,7 +293,7 @@ class NAE:
     
     def newObjectSelector(self, form):
         ag = self.getFirstAG()
-        url ='https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/object-selectors'
+        url ='https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/object-selectors'
         req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
            self.logger.info("Object Selectors created")
@@ -302,7 +302,7 @@ class NAE:
 
     def newTrafficSelector(self, form):
         ag = self.getFirstAG()
-        url ='https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/traffic-selectors'
+        url ='https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/traffic-selectors'
         req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
            self.logger.info("Traffic Selectors created")
@@ -311,7 +311,7 @@ class NAE:
 
     def newComplianceRequirement(self, form):
         ag = self.getFirstAG()
-        url ='https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirements'
+        url ='https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirements'
         req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
            self.logger.info("Compliance Requirement created")
@@ -320,7 +320,7 @@ class NAE:
 
     def newComplianceRequirementSet(self, form):
         ag = self.getFirstAG()
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirement-sets'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirement-sets'
         req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
            self.logger.info("Complianc Requirement Set created")
@@ -328,7 +328,7 @@ class NAE:
            self.logger.info("Complianc Requirement Set creation failed with error message \n %s",req.json())
    
     def newDeltaAnalysis(self,name, prior_epoch_uuid, later_epoch_uuid):
-        url = 'https://'+self.ip_addr+'/api/v1/job-services'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/job-services'
         form = '''{
                "type": "EPOCH_DELTA_ANALYSIS",
                "name": "''' + name + '''",
@@ -357,7 +357,7 @@ class NAE:
         # By default I drop all the epoch of type Pre Change Verification. 
 
         fabric = self.getAG(fabricName)            
-        url =  u'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+str(fabric['uuid'])+'/epochs?$sort=collectionTimestamp'
+        url =  u'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+str(fabric['uuid'])+'/epochs?$sort=collectionTimestamp'
         self.logger.info("Getting Epochs for fabric %s", fabric['unique_name'])
              
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
@@ -369,41 +369,41 @@ class NAE:
             #4.0 does not have PVC so there is no epoch_type key. 
             if '4.0' in self.version:
                 return req.json()['value']['data']
-            elif '4.1' in self.version:
+            elif '4.1' or '5.0' in self.version:
                 return [i for i in req.json()['value']['data'] if not (i['epoch_type'] == 'PCV')]
-
+           
 
     def getAllReqSets(self):
         # Need to get an Assurange gropup to access requirement sets so I get the first one. 
         ag = self.getFirstAG()
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirement-sets'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirement-sets'
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         return req.json()['value']['data']
 
     def getAllReq(self):
         # Need to get an Assurange gropup to access requirement sets so I get the first one. 
         ag = self.getFirstAG()
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirements'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/requirements'
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         return req.json()['value']['data']
 
     def getAllTrafficSelectors(self):
         # Need to get an Assurange gropup to access requirement sets so I get the first one. 
         ag = self.getFirstAG()
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/traffic-selectors'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/traffic-selectors'
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         return req.json()['value']['data']
 
     def getAllObjSelectors(self):
         # Need to get an Assurange gropup to access requirement sets so I get the first one. 
         ag = self.getFirstAG()
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/object-selectors'
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag["uuid"]+'/model/aci-policy/compliance-requirement/object-selectors'
         req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         return req.json()['value']['data']
 
 
     def deleteAG(self, obj):
-        url = u'https://'+self.ip_addr+'/api/v1/config-services/assured-networks/aci-fabric/' + obj['uuid']
+        url = u'https://'+self.ip_addr+'/nae/api/v1/config-services/assured-networks/aci-fabric/' + obj['uuid']
         req = requests.delete(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
             self.logger.info("Deleted Assurance group %s", obj['unique_name'])
@@ -411,7 +411,7 @@ class NAE:
             self.logger.info("Deleting Assurance group %s failed with error %s",obj['unique_name'], req.json())
 
     def deleteReqSet(self, ag_uuid, obj):
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/requirement-sets/'+obj['uuid']
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/requirement-sets/'+obj['uuid']
         req = requests.delete(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
             self.logger.info("Deleted Requirement Set %s", obj['name'])
@@ -419,7 +419,7 @@ class NAE:
             self.logger.info("Deleting Requirement Set %s failed with error %s",obj['name'], req.json())
 
     def deleteReq(self, ag_uuid, obj):
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/requirements/'+obj['uuid']
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/requirements/'+obj['uuid']
         req = requests.delete(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
             self.logger.info("Deleted Requirement %s", obj['name'])
@@ -427,7 +427,7 @@ class NAE:
             self.logger.info("Deleting Requirement %s failed with error %s",obj['name'], req.json())
 
     def deleteObjSelector(self, ag_uuid, obj):
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/object-selectors/'+obj['uuid']
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/object-selectors/'+obj['uuid']
         req = requests.delete(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
             self.logger.info("Deleted Object Selector %s", obj['name'])
@@ -435,72 +435,62 @@ class NAE:
             self.logger.info("Deleting Object Selector %s failed with error %s",obj['name'], req.json())
 
     def deleteTrafficSelector(self, ag_uuid, obj):
-        url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/traffic-selectors/'+obj['uuid']
+        url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/'+ag_uuid+'/model/aci-policy/compliance-requirement/traffic-selectors/'+obj['uuid']
         req = requests.delete(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
         if req.status_code == 200:
             self.logger.info("Deleted traffic-selector %s", obj['name'])
         else:
             self.logger.info("Deleting traffic-selector %s failed with error %s",obj['name'], req.json())
 
-    def sendNewPreChangePayload(self, manual_flag, file_flag, file_content,changes, ag_name,name, description):
-        config = []
-        f = None
+    def newManualPCV(self, changes, ag_name,name, description):
         fabric_id = str(self.getAG(ag_name)['uuid'])
         base_epoch_id = self.getEpochs(ag_name,False)[-1]["epoch_id"]
-        if(manual_flag):
-            config = changes
-        if(file_flag):
-            f = file_content
-        fields = {
-                ('data', 
-                    (f,
-                    
-                        # content to upload 
-                            '''{
-                                "name": "''' + name + '''",
-                                "fabric_uuid": "''' + fabric_id + '''",
-                                "base_epoch_id": "''' + base_epoch_id + '''",
-                                
-                                "changes": ''' + str(config) + ''',
-                                "stop_analysis": false,
-                                "change_type": "CHANGE_LIST"
-                                }'''
-                        # The content type of the file
-                        , 'application/json'))
-                }
-        url = 'https://'+self.ip_addr+'/api/v1/config-services/prechange-analysis'  
-        m = MultipartEncoder(fields=fields)
-        #Replace the normal 'Content-Type':'application/json;charset=utf-8' with the multipart/form-data and the boundary 
-        h = self.http_headers
-        h['Content-Type']= m.content_type
-        req = requests.post(url, data=m,  headers=h, cookies=self.session_cookie, verify=False) 
+        if '4.1' in self.version:
+            f = None
+            fields = {
+                    ('data', 
+                        (f,
+                        
+                            # content to upload 
+                                '''{
+                                    "name": "''' + name + '''",
+                                    "fabric_uuid": "''' + fabric_id + '''",
+                                    "base_epoch_id": "''' + base_epoch_id + '''",
+                                    
+                                    "changes": ''' + json.dumps(changes) + ''',
+                                    "stop_analysis": false,
+                                    "change_type": "CHANGE_LIST"
+                                    }'''
+                            # The content type of the file
+                            , 'application/json'))
+                    }
+            url = 'https://'+self.ip_addr+'/nae/api/v1/config-services/prechange-analysis'  
+            m = MultipartEncoder(fields=fields)
+            h = self.http_headers
+            h['Content-Type']= m.content_type
+            req = requests.post(url, data=m,  headers=h, cookies=self.session_cookie, verify=False) 
+ 
+        elif '5.0' in  self.version:
+            url = 'https://'+self.ip_addr+'/nae/api/v1/config-services/prechange-analysis/manual-changes?action=RUN'
+            form = '''{
+                                    "name": "''' + name + '''",
+                                    "allow_unsupported_object_modification": true,
+                                    "uploaded_file_name": null,
+                                    "stop_analysis": false,
+                                    "fabric_uuid": "''' + fabric_id + '''",
+                                    "base_epoch_id": "''' + base_epoch_id + '''",
+                                    "imdata": ''' + changes + '''
+                                    }'''
+
+            req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
+
         if req.status_code == 200:
-            self.logger.info('Pre-Change analysis "' + name + '" created.')
+           self.logger.info('Pre-Change analysis "' + name + '" created.')
         else:
-            self.logger.info("Error %s", req.content)     
+          self.logger.info("Error %s", req.content)    
+
+
     
-    # def createNewUploadOfflineManagement(self):
-
-
-        
-
-    def createPreChange(self, ag_name,name,description,interactive_flag,changes,file_path):
-        if(interactive_flag):
-                name = input("Enter name for new Pre-Change Analysis: \n====> ")
-                user_input = input("Enter relative path to file. Accepted file formats are JSON and XML: \n====> ")
-                assert os.path.exists(user_input), "File not found, "+str(user_input)
-                f = open(user_input,"rb")
-                self.sendNewPreChangePayload(False,True,f,changes,ag_name,name,description)
-        elif(changes):
-            self.sendNewPreChangePayload(True,False,None,changes,ag_name,name,description)
-        elif(file_path):
-            assert os.path.exists(file_path), "File not found, "+str(file_path)
-            f = open(file_path,"rb")
-            self.sendNewPreChangePayload(False,True,f,changes,ag_name,name,description)
-
-
-
-
     def getPreChangeAnalyses(self, ag_name, out_flag):
         fabric_id = str(self.getAG(ag_name)['uuid'])
         url = 'https://'+self.ip_addr+'/nae/api/v1/config-services/prechange-analysis?fabric_id='+fabric_id
@@ -569,7 +559,7 @@ class NAE:
         while has_more_data:  
             self.logger.info("Requesting %d objects per page", objPerPage)            
             #I get data sorter by tcam hists for hitcount-by-rules --> hitcount-by-epgpair-contract-filter
-            url = 'https://'+self.ip_addr+'/api/v1/event-services/assured-networks/' + fabric_id +'/model/aci-policy/tcam/hitcount-by-rules/hitcount-by-epgpair-contract-filter?$epoch_id='+latest_epoch+'&$page='+str(page)+'&$size='+str(objPerPage)+'&$sort=-cumulative_count&$view=histogram'
+            url = 'https://'+self.ip_addr+'/nae/api/v1/event-services/assured-networks/' + fabric_id +'/model/aci-policy/tcam/hitcount-by-rules/hitcount-by-epgpair-contract-filter?$epoch_id='+latest_epoch+'&$page='+str(page)+'&$size='+str(objPerPage)+'&$sort=-cumulative_count&$view=histogram'
             start = time.time()
             req = requests.get(url, headers=self.http_headers, cookies=self.session_cookie, verify=False)
             end = time.time()
@@ -784,7 +774,7 @@ class NAE:
                 while total_time < timeout:
                     time.sleep(10)
                     total_time += 10
-                    response = self.get('https://'+self.ip_addr + '/api/v1/file-services/upload-file')
+                    response = self.get('https://'+self.ip_addr +'/nae/api/v1/file-services/upload-file')
                     if response and response.status_code == 200:
                         resp = response.json()
                         uuid = complete_url.split('/')[-2]
