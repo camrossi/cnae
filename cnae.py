@@ -457,7 +457,7 @@ class NAE:
                                     "fabric_uuid": "''' + fabric_id + '''",
                                     "base_epoch_id": "''' + base_epoch_id + '''",
                                     
-                                    "changes": ''' + json.dumps(changes) + ''',
+                                    "changes": ''' + changes + ''',
                                     "stop_analysis": false,
                                     "change_type": "CHANGE_LIST"
                                     }'''

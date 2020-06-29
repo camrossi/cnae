@@ -51,7 +51,6 @@ nae = cnae.NAE (args.nae_ip)
 #Log in to NAE with user and password
 nae.login(args.user, nae_password,args.domain)
 
-
 #Create assurange Groups
 nae.newOfflineAG("Change Management")
 nae.newOfflineAG("Data Center Operations")
@@ -262,7 +261,8 @@ for ag in  offline_analysis:
 
 # Create PCV
 
-changes =[  '''   {
+
+changes ='''[{
       "bd_change": {
         "action": "ADD",
         "dn": "uni/tn-NAE_Compliance/BD-BD2",
@@ -302,6 +302,6 @@ changes =[  '''   {
         "pref_gr_memb": "exclude",
         "bd_name": "BD2"
       }
-    }''']
-nae.newManualPCV(changes = changes,ag_name="Pre Change Verification",name="Add_BD_EPG_NotOK", description="dCloud Demo")
+    }]'''
 
+nae.newManualPCV(changes = changes,ag_name="Pre Change Verification",name="Add_BD_EPG_NotOK", description="dCloud Demo")
