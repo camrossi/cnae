@@ -29,8 +29,7 @@ class NAE:
                             'Accept-Language':'en-GB,en-US;q=0.9,en;q=0.8,it;q=0.7',
                             'Sec-Fetch-Mode': 'cors',
                             'Sec-Fetch-Site': 'same-origin',
-                            #'Host' : self.ip_addr,
-                             'Host' : '10.66.176.111',
+                            'Host' : self.ip_addr,
                             'Content-Type':'application/json;charset=utf-8', 
                             }
         # create logger
@@ -58,7 +57,6 @@ class NAE:
         
         url = 'https://'+self.ip_addr+'/nae/api/v1/whoami'
         req = requests.get(url, headers=self.http_headers, verify=False)
-        pprint(req.text)
         #Save all the cookies
         self.session_cookie = req.cookies
     
@@ -443,6 +441,11 @@ class NAE:
             self.logger.info("Deleting traffic-selector %s failed with error %s",obj['name'], req.json())
 
     def newManualPCV(self, changes, ag_name,name, description):
+        
+        while self.isOnDemandAnalysis() or self.isLiveAnalysis():
+            self.logger.info("There is currently an  analysis running  will try again in 2 minutes. \n If is a live analysis please stop it manually")
+            time.sleep(120)
+       
         fabric_id = str(self.getAG(ag_name)['uuid'])
         base_epoch_id = self.getEpochs(ag_name,False)[-1]["epoch_id"]
         if '4.1' in self.version:

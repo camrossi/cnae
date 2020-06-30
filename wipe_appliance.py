@@ -19,7 +19,8 @@ def get_args():
     return args
 
 args= get_args()
-nae_password = getpass.getpass()
+#nae_password = getpass.getpass()
+nae_password = "C@ndidadmin1234"
 #Create NAE Object
 nae = cnae.NAE (args.nae_ip)
 
