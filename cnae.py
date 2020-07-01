@@ -621,7 +621,7 @@ class NAE:
 
     def upload_file(self, unique_name, file_path, fabric_uuid=None):
         file_upload_uuid = None
-        uri = 'https://'+self.ip_addr + "/api/v1/file-services/upload-file"
+        uri = 'https://'+self.ip_addr + "/nae/api/v1/file-services/upload-file"
         try:
             with self.get_logout_lock():
                 chunk_url = self.start_upload(unique_name, file_path, uri, 'OFFLINE_ANALYSIS', fabric_uuid)
@@ -689,7 +689,7 @@ class NAE:
             offset = 0
             self.logger.info("chunk_id:{}".format(chunk_id))
             self.logger.info("offset:{}".format(offset))
-            chunk_uri = 'https://'+self.ip_addr + chunk_url[chunk_url.index('/api/'):]
+            chunk_uri = 'https://'+self.ip_addr + '/nae' + chunk_url[chunk_url.index('/api/'):]
             self.logger.info("chunk_uri:{}".format(chunk_uri))
             response = None
             file_size_in_bytes = os.path.getsize(file_path)
@@ -727,7 +727,7 @@ class NAE:
                     print("no response received while uploading chuks")
                     print(response.text)
                     self.logger.error('no response received while uploading chunks')
-        except IOError:
+        except IOError as ioex:
             self.logger.error("Cannot open: {}".format(file_path))
         return None
 
@@ -763,7 +763,7 @@ class NAE:
         completes successfully later.
         """
         timeout = 300
-        complete_uri = 'https://'+self.ip_addr + complete_url[complete_url.index('/api/'):]
+        complete_uri = 'https://'+self.ip_addr + '/nae' + complete_url[complete_url.index('/api/'):]
         #response = self.post(complete_uri, timeout=240)
         response = requests.post(complete_uri, headers=self.http_headers,cookies=self.session_cookie, verify=False)
         try:

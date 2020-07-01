@@ -234,7 +234,6 @@ ag_uuid  = nae.getAG('Segmentation Compliance')
 
 for oa in offline_analysis:
     for f in oa["filename"]:
-        print(f)
         unique_name = f.strip().split("/")[-1]
 
         #I get the major version of NAE and expect the files to be in the right folder 4.1 for NAE 4.1.x and 5.0 for NAE 5.0.x
