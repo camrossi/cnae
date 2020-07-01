@@ -198,8 +198,8 @@ class NAE:
         self.logger.info("Trying to Starting Analysis  %s",name)
         
         while self.isOnDemandAnalysis() or self.isLiveAnalysis():
-            self.logger.info("There is currently an  analysis running  will try again in 2 minutes. \n If is a live analysis please stop it manually")
-            time.sleep(120)
+            self.logger.info("There is currently an  analysis running  will try again in 30 seconds. \n If is a live analysis please stop it manually")
+            time.sleep(30)
 
         form = '''{
           "unique_name": "''' + name + '''",

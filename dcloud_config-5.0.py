@@ -262,45 +262,101 @@ for ag in  offline_analysis:
 
 
 changes ='''[{
-      "bd_change": {
-        "action": "ADD",
-        "dn": "uni/tn-NAE_Compliance/BD-BD2",
-        "optimize_wan_bandwidth": "no",
-        "type": "regular",
-        "arp_flood": "no",
-        "ip_learning": "yes",
-        "limit_ip_learn_to_subnets": "yes",
-        "unk_mac_ucast_act": "proxy",
-        "unicast_route": "yes",
-        "multi_dst_pkt_act": "bd-flood",
-        "unk_mcast_act": "flood",
-        "multi_cast_allow": "no",
-        "vrf_name": "VRF1"
+      "fvBD": {
+        "attributes": {
+          "OptimizeWanBandwidth": "no",
+          "arpFlood": "no",
+          "descr": "",
+          "epClear": "no",
+          "hostBasedRouting": "no",
+          "intersiteBumTrafficAllow": "no",
+          "intersiteL2Stretch": "no",
+          "ipLearning": "yes",
+          "limitIpLearnToSubnets": "yes",
+          "llAddr": "",
+          "mac": "00:22:BD:F8:19:FF",
+          "mcastAllow": "no",
+          "multiDstPktAct": "bd-flood",
+          "nameAlias": "",
+          "type": "regular",
+          "unicastRoute": "yes",
+          "unkMacUcastAct": "proxy",
+          "unkMcastAct": "flood",
+          "v6unkMcastAct": "flood",
+          "vmac": "not-applicable",
+          "dn": "uni/tn-NAE_Compliance/BD-BD2",
+          "name": "BD2",
+          "pcv_status": "created"
+        },
+        "children": [
+          {
+            "fvRsCtx": {
+              "attributes": {
+                "tnFvCtxName": "VRF1",
+                "pcv_status": "created"
+              }
+            }
+          }
+        ]
       }
     },
     {
-      "network_subnet_change": {
-        "action": "ADD",
-        "dn": "uni/tn-NAE_Compliance/BD-BD2/subnet-192.168.1.1/16",
-        "scope": "private",
-        "make_this_primary_ip_address": "no",
-        "treat_as_virtual_ip_address": "no",
-        "subnet_control": "nd"
+      "fvSubnet": {
+        "attributes": {
+          "ctrl": "nd",
+          "descr": "",
+          "name": "",
+          "nameAlias": "",
+          "preferred": "no",
+          "scope": "private",
+          "virtual": "no",
+          "dn": "uni/tn-NAE_Compliance/BD-BD2/subnet-192.168.1.1/16",
+          "ip": "192.168.1.1/16",
+          "pcv_status": "created"
+        },
+        "children": []
       }
     },
     {
-      "epg_change": {
-        "action": "ADD",
-        "dn": "uni/tn-NAE_Compliance/ap-ComplianceIsGood/epg-PreProdDB",
-        "consumed_contract_names": [],
-        "provided_contract_names": [
-          "WS_To_DB"
-        ],
-        "taboo_contract_names": [],
-        "pc_enf_pref": "enforced",
-        "pref_gr_memb": "exclude",
-        "bd_name": "BD2"
+      "fvAEPg": {
+        "attributes": {
+          "descr": "",
+          "exceptionTag": "",
+          "floodOnEncap": "disabled",
+          "fwdCtrl": "none",
+          "hasMcastSource": "no",
+          "isAttrBasedEPg": "no",
+          "matchT": "AtleastOne",
+          "nameAlias": "",
+          "pcEnfPref": "unenforced",
+          "prefGrMemb": "exclude",
+          "prio": "unspecified",
+          "shutdown": "no",
+          "dn": "uni/tn-NAE_Compliance/ap-ComplianceIsGood/epg-PreProdDB",
+          "name": "PreProdDB",
+          "pcv_status": "created"
+        },
+        "children": [
+          {
+            "fvRsBd": {
+              "attributes": {
+                "tnFvBDName": "BD2",
+                "pcv_status": "created"
+              }
+            }
+          },
+          {
+            "fvRsProv": {
+              "attributes": {
+                "tnVzBrCPName": "WS_To_DB",
+                "pcv_status": "created"
+              }
+            }
+          }
+        ]
       }
-    }]'''
+    }
+]'''
+
 
 nae.newManualPCV(changes = changes,ag_name="Pre Change Verification",name="Add_BD_EPG_NotOK", description="dCloud Demo")
