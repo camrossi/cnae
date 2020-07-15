@@ -119,6 +119,62 @@ object_selectors=[
                     ],
                     "excludes": [],
                     "selector_type": "OST_EPG"
+                  }''','''{
+                        "name": "WebService",
+                    "description": null,
+                    "includes": [
+                      {
+                        "matches": [
+                          {
+                            "application_epgmatch": {
+                              "object_attribute": "DN",
+                              "tenant": {
+                                "pattern": "NAE_Compliance",
+                                "type": "EXACT"
+                              },
+                              "application_profile": {
+                                "pattern": "ComplianceIsGood",
+                                "type": "EXACT"
+                              },
+                              "application_epg": {
+                                "pattern": "WebService",
+                                "type": "EXACT"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "excludes": [],
+                    "selector_type": "OST_EPG"
+                  }''','''{
+                        "name": "PreProdDB",
+                    "description": null,
+                    "includes": [
+                      {
+                        "matches": [
+                          {
+                            "application_epgmatch": {
+                              "object_attribute": "DN",
+                              "tenant": {
+                                "pattern": "NAE_Compliance",
+                                "type": "EXACT"
+                              },
+                              "application_profile": {
+                                "pattern": "ComplianceIsGood",
+                                "type": "EXACT"
+                              },
+                              "application_epg": {
+                                "pattern": "PreProdDB",
+                                "type": "EXACT"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "excludes": [],
+                    "selector_type": "OST_EPG"
                   }''','''
                   {
                     "name": "BDs In Common",
@@ -176,7 +232,15 @@ compliance_requirements = [
                                   }
                                 ]
                               }
-                            }'''
+                            }''','''{
+                                  "name": "PCV Segmentation",
+                                  "config_compliance_parameter": {                                  },
+                                  "epg_selector_a": "WebService",
+                                  "epg_selector_b": "PreProdDB",
+                                  "requirement_type": "SEGMENTATION",
+                                  "communication_type": "MUST_NOT",
+                                  "is_all_traffic": false
+                            }''' 
                                 ]
 
 for obj in compliance_requirements:
@@ -184,6 +248,8 @@ for obj in compliance_requirements:
 
 sseg = nae.getAG('Segmentation Compliance')
 cseg = nae.getAG('Config Compliance')
+pcvseg = nae.getAG('Pre Change Verification')
+
 
 requirement_sets = [
                      '''{
@@ -212,7 +278,22 @@ requirement_sets = [
                         }
                       ],
                     "description": null
+                    }''','''
+                    {
+                      "name": "PCV Compliance",
+                      "requirements": [
+                        "PCV Segmentation"
+                      ],
+                      "assurance_groups": [
+                        {
+                         "active": true,
+                         "fabric_uuid": "''' + pcvseg['uuid'] + '''"
+                          
+                        }
+                      ],
+                      "description": null
                     }'''
+
                    ]
 
 for obj in requirement_sets:
@@ -346,9 +427,9 @@ changes ='''[{
             }
           },
           {
-            "fvRsProv": {
+            "fvRsCons": {
               "attributes": {
-                "tnVzBrCPName": "WS_To_DB",
+                "tnVzBrCPName": "Web_DB",
                 "pcv_status": "created"
               }
             }

@@ -217,7 +217,7 @@ class NAE:
                 self.logger.info("Offline Analysis creation failed with error message \n %s",req.content)
 
         
-        elif '4.1' in self.version or '5.0' in  self.version:
+        elif '4.1' in self.version or '5.0' in  self.version or '5.1' in self.version:
             #in 4.1 starting an offline analysis is composed of 2 steps
             # 1 Create the Offline analysis
             url ='https://'+self.ip_addr+'/nae/api/v1/config-services/offline-analysis'
@@ -255,7 +255,7 @@ class NAE:
                     self.logger.info("Offline Analysis creation failed with error message \n %s",req.content)
 
         else:
-                self.logger.info("Offline Analysis creation failed with error message \n %s",req.content) 
+                self.logger.info("Unsupported version")
 
     def getFiles(self):
         #This methods loads all the uploaded files to NAE
@@ -473,7 +473,7 @@ class NAE:
             h['Content-Type']= m.content_type
             req = requests.post(url, data=m,  headers=h, cookies=self.session_cookie, verify=False) 
  
-        elif '5.0' in  self.version:
+        elif '5.0' in  self.version or '5.1' in  self.version:
             url = 'https://'+self.ip_addr+'/nae/api/v1/config-services/prechange-analysis/manual-changes?action=RUN'
             form = '''{
                                     "name": "''' + name + '''",
