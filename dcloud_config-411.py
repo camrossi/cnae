@@ -89,6 +89,63 @@ object_selectors=[
                     ],
                     "excludes": [],
                     "selector_type": "OST_EPG"
+                  }''','''{
+                        "name": "WebService",
+                    "description": null,
+                    "includes": [
+                      {
+                        "matches": [
+                          {
+                            "application_epgmatch": {
+                              "object_attribute": "DN",
+                              "tenant": {
+                                "pattern": "NAE_Compliance",
+                                "type": "EXACT"
+                              },
+                              "application_profile": {
+                                "pattern": "ComplianceIsGood",
+                                "type": "EXACT"
+                              },
+                              "application_epg": {
+                                "pattern": "WebService",
+                                "type": "EXACT"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "excludes": [],
+                    "selector_type": "OST_EPG"
+                  }''',
+                  '''{
+                        "name": "PreProdDB",
+                    "description": null,
+                    "includes": [
+                      {
+                        "matches": [
+                          {
+                            "application_epgmatch": {
+                              "object_attribute": "DN",
+                              "tenant": {
+                                "pattern": "NAE_Compliance",
+                                "type": "EXACT"
+                              },
+                              "application_profile": {
+                                "pattern": "ComplianceIsGood",
+                                "type": "EXACT"
+                              },
+                              "application_epg": {
+                                "pattern": "PreProdDB",
+                                "type": "EXACT"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "excludes": [],
+                    "selector_type": "OST_EPG"
                   }''',
                   '''{
                     "name": "FrontEnd",
@@ -150,8 +207,6 @@ compliance_requirements = [
                             {
                                   "name": "Segmentation",
                                   "config_compliance_parameter": {
-                                    "and_list_list": [],
-                                    "or_list_list": []
                                   },
                                   "epgselector_a": "FrontEnd",
                                   "epgselector_b": "DataBase",
@@ -177,14 +232,24 @@ compliance_requirements = [
                                   }
                                 ]
                               }
-                            }'''
-                                ]
+                            }''','''{
+                                  "name": "PCV Segmentation",
+                                  "config_compliance_parameter": {
+                                  },
+                                  "epgselector_a": "WebService",
+                                  "epgselector_b": "PreProdDB",
+                                  "requirementType": "SEGMENTATION",
+                                  "communicationType": "MUST_NOT",
+                                  "isAllTraffic": false
+                            }'''                            
+                            ]
 
 for obj in compliance_requirements:
     nae.newComplianceRequirement(obj)
-
 sseg = nae.getAG('Segmentation Compliance')
 cseg = nae.getAG('Config Compliance')
+pcvseg = nae.getAG('Pre Change Verification')
+
 
 requirement_sets = [
                      '''{
@@ -208,6 +273,20 @@ requirement_sets = [
                         {
                          "active": true,
                          "fabric_uuid": "''' + cseg['uuid'] + '''"
+                          
+                        }
+                      ],
+                      "description": null
+                    }''','''
+                    {
+                      "name": "PCV Compliance",
+                      "requirements": [
+                        "PCV Segmentation"
+                      ],
+                      "assurance_groups": [
+                        {
+                         "active": true,
+                         "fabric_uuid": "''' + pcvseg['uuid'] + '''"
                           
                         }
                       ],
