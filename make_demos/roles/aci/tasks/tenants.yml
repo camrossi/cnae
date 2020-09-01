@@ -42,15 +42,6 @@
   tags:
     - apic_config
 
-- name: 'check on async task'
-  async_status:
-    jid: "{{ async_poll.ansible_job_id }}"
-  register: job_result
-  until: job_result.finished
-  retries: 30
-  tags:
-    - apic_config
-
 - name: Ensure BD Subnet exists
   cisco.aci.aci_bd_subnet:
     <<: *aci_login
