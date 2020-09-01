@@ -1,0 +1,28 @@
+---
+- name: Delete NAE tenants
+  cisco.aci.aci_tenant:
+    hostname: "{{ inventory_hostname }}"
+    username: "{{ aci_temp_username }}"
+    private_key: "{{ './roles/aci/files/'+ aci_temp_username + '-user.key' }}"
+    certificate_name: "{{ aci_temp_username }}"
+    use_proxy: "no"
+    validate_certs: "{{ validate_certs }}"
+    port: "{{ port }}"
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ tenants }}"
+  tags:
+    - delete_tenants
+
+- name: Delete temporary user
+  cisco.aci.aci_aaa_user:
+    host: "{{ inventory_hostname }}"
+    username: "{{ admin_user }}"
+    password: "{{ admin_pass }}"
+    aaa_user: "{{ aci_temp_username }}"
+    aaa_password: "{{ aci_temp_pass }}"
+    validate_certs: "{{ validate_certs }}"
+    state: absent
+  tags:
+    - cleanup_user

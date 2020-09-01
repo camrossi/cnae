@@ -1,0 +1,5 @@
+collections:
+  - name: community.crypto
+  - name: cisco.aci
+  - name: cisco.nae
+  - name: datacenter.aci-model

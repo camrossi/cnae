@@ -1,0 +1,990 @@
+tenants:
+  - nae-prod
+  - nae-non-prod
+  - nae-dmz
+
+vrfs:
+  - ['nae-prod', 'nae-prod-vrf']
+  - ['nae-non-prod', 'nae-non-prod-vrf']
+  - ['nae-dmz','dmz-vrf']
+bds:
+  - [nae-prod, prod-l2only-bd, prod-vrf,   10.72.0.1,24]
+  - [nae-prod, prod-hadoop-management-bd, prod-vrf, 10.68.0.1,24]
+  - [nae-prod, prod-internal-vdi-bd, prod-vrf, 10.71.0.1,24]
+  - [nae-prod, prod-exchange-mail-bd, prod-vrf, 10.67.0.1,24]
+  - [nae-prod, prod-hadoop-hdfs-bd, prod-vrf, 10.70.0.1,24]
+  - [nae-prod, prod-hadoop-user-connectivity-bd, prod-vrf, 10.69.0.1,24]
+  - [nae-prod, prod-exchange-dag-bd, prod-vrf, 10.73.0.1,24]  
+  - [nae-prod, prod-db-bd, prod-vrf, 10.65.0.1,24]
+  - [nae-prod, prod-app-bd, prod-vrf, 10.66.0.1,24]
+  - [nae-non-prod, non-prod-web-bd, non-prod-vrf, 10.11.0.1,24]
+  - [nae-non-prod, non-prod-internal-vdi-bd, non-prod-vrf, 10.18.0.1,24]
+  - [nae-non-prod, non-prod-exchange-dag-bd, non-prod-vrf, 10.19.0.1,24] 
+  - [nae-non-prod, non-prod-app-bd, non-prod-vrf, 10.12.0.1,24]
+  - [nae-non-prod, non-prod-hadoop-hdfs-bd, non-prod-vrf, 10.17.0.1,24]
+  - [nae-non-prod, non-prod-l2only-bd, non-prod-vrf, 10.20.0.1,24]
+  - [nae-non-prod, non-prod-hadoop-management-bd, non-prod-vrf, 10.15.0.1,24]
+  - [nae-non-prod, non-prod-db-bd, non-prod-vrf, 10.13.0.1,24]
+  - [nae-non-prod, non-prod-exchange-mail-bd, non-prod-vrf, 10.14.0.1,24]
+  - [nae-non-prod, non-prod-hadoop-user-connectivity-bd, non-prod-vrf, 10.16.0.1,24]
+  - [dmz, dmz-web-bd, dmz-vrf, 10.129.0.1,24]
+  - [dmz, dmz-partner-vdi-bd, dmz-vrf, 10.131.0.1,24]
+  - [dmz, dmz-l2only-bd, dmz-vrf, 10.132.0.1,24]
+  - [dmz, dmz-ext-dns-bd, dmz-vrf, 10.130.0.1,24]
+
+
+apps: 
+  - [nae-non-prod,ordering-ap]
+  - [nae-non-prod,hadoop-ap]
+  - [nae-non-prod,exchange-ap]
+  - [nae-non-prod,petstore-ap]
+  - [nae-non-prod,payroll-ap]
+  - [nae-non-prod,internal-vdi-ap]
+  - [nae-prod,hadoop-ap]
+  - [nae-prod,ordering-ap]
+  - [nae-prod,exchange-ap]
+  - [nae-prod,payroll-ap]
+  - [nae-prod,internal-vdi-ap]
+  - [nae-prod,petstore-ap]
+  - [nae-dmz,petstore-ap]
+  - [nae-dmz,payroll-ap]
+  - [nae-dmz,ordering-ap]
+  - [nae-dmz,partner-vdi-ap]
+  - [nae-dmz,external-dns-ap]
+
+epgs: 
+  - [nae-prod,hadoop-ap,hadoop-user-connectivity-epg, prod-hadoop-user-connectivity-bd]
+  - [nae-prod,hadoop-ap,hadoop-hdfs-epg, prod-hadoop-hdfs-bd]
+  - [nae-prod,hadoop-ap,hadoop-mgmt-epg, prod-hadoop-management-bd]
+  - [nae-prod,ordering-ap,ordering-db-tier-epg, prod-db-bd]
+  - [nae-prod,ordering-ap,ordering-app-tier-epg, prod-app-bd]
+  - [nae-prod,exchange-ap,exchange-dag-epg, prod-exchange-dag-bd]
+  - [nae-prod,exchange-ap,exchange-mail-epg, prod-exchange-mail-bd]
+  - [nae-prod,payroll-ap,payroll-app-tier-epg, prod-app-bd]
+  - [nae-prod,payroll-ap,payroll-db-tier-epg, prod-db-bd]
+  - [nae-prod,internal-vdi-ap,internal-vdi-infra-epg, prod-l2only-bd]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg, prod-internal-vdi-bd]
+  - [nae-prod,petstore-ap,petstore-db-tier-epg, prod-db-bd]
+  - [nae-prod,petstore-ap,petstore-app-tier-epg, prod-app-bd]
+  - [nae-dmz,petstore-ap,petstore-web-tier-epg, dmz-web-bd]
+  - [nae-dmz,payroll-ap,payroll-web-tier-epg, dmz-web-bd]
+  - [nae-dmz,ordering-ap,ordering-web-tier-epg, dmz-web-bd]
+  - [nae-dmz,partner-vdi-ap,partner-vdi-infra-epg, dmz-l2only-bd]
+  - [nae-dmz,partner-vdi-ap,partner-vdi-desktops-epg, dmz-partner-vdi-bd]
+  - [nae-dmz,external-dns-ap,external-dns-epg, dmz-ext-dns-bd]
+  - [nae-non-prod,ordering-ap,ordering-web-tier-epg, non-prod-web-bd]
+  - [nae-non-prod,ordering-ap,ordering-db-tier-epg, non-prod-db-bd]
+  - [nae-non-prod,ordering-ap,ordering-app-tier-epg, non-prod-app-bd]
+  - [nae-non-prod,hadoop-ap,hadoop-mgmt-epg, non-prod-hadoop-management-bd]
+  - [nae-non-prod,hadoop-ap,hadoop-hdfs-epg, non-prod-hadoop-hdfs-bd]
+  - [nae-non-prod,hadoop-ap,hadoop-user-connectivity-epg, non-prod-hadoop-user-connectivity-bd]
+  - [nae-non-prod,exchange-ap,exchange-dag-epg, non-prod-exchange-dag-bd]
+  - [nae-non-prod,exchange-ap,exchange-mail-epg, non-prod-exchange-mail-bd]
+  - [nae-non-prod,petstore-ap,petstore-app-tier-epg, non-prod-app-bd]
+  - [nae-non-prod,petstore-ap,petstore-db-tier-epg, non-prod-db-bd]
+  - [nae-non-prod,petstore-ap,petstore-web-tier-epg, non-prod-web-bd]
+  - [nae-non-prod,payroll-ap,payroll-web-tier-epg, non-prod-web-bd]
+  - [nae-non-prod,payroll-ap,payroll-db-tier-epg, non-prod-db-bd]
+  - [nae-non-prod,payroll-ap,payroll-app-tier-epg, non-prod-app-bd]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-infra-epg, non-prod-l2only-bd]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg, non-prod-internal-vdi-bd]
+
+filters:
+  - name: ULS
+    tenant: nae-prod
+    entries:
+      - [tcp_522, tcp, 522, 522]
+  - name: SSH
+    tenant: nae-prod
+    entries:
+      - [tcp_22, tcp, 22, 22]
+  - name: oracle_updated
+    tenant: nae-prod
+    entries:
+      - [tcp_2483, tcp, 2483, 2483]
+  - name: Internal_DNS
+    tenant: nae-prod
+    entries:
+      - [udp_53, udp, dns, dns]
+  - name: Any
+    tenant: nae-prod
+    entries:
+      - [Any, unspecified, unspecified, unspecified]
+  - name: SMTP_SSL
+    tenant: nae-prod
+    entries:
+      - [tcp_465, tcp, 465, 465]
+  - name: RDP
+    tenant: nae-prod
+    entries:
+      - [tcp_3389_3390, tcp, 3389, 3390]
+  - name: SMB
+    tenant: nae-prod
+    entries:
+      - [tcp_445, tcp, 445, 445]
+  - name: X.400
+    tenant: nae-prod
+    entries:
+      - [tcp_102, tcp, 102, 102]
+  - name: ADWS
+    tenant: nae-prod
+    entries:
+      - [tcp_9389, tcp, 9389, 9389]
+  - name: LDAP-SSL
+    tenant: nae-prod
+    entries:
+      - [tcp_636, tcp, 636, 636]
+  - name: LDAP
+    tenant: nae-prod
+    entries:
+      - [udp_389, udp, 389, 389]
+      - [udp_3268_3269, udp, 3268, 3269]
+      - [tcp_389, tcp, 389, 389]
+  - name: HTTP
+    tenant: nae-prod
+    entries:
+      - [tcp_80, tcp, http, http]
+  - name: NAT-T
+    tenant: nae-prod
+    entries:
+      - [udp_4500, udp, 500, 500]
+  - name: IPSEC-ISAKMP
+    tenant: nae-prod
+    entries:
+      - [udp_500, udp, 500, 500]
+  - name: HTTPS
+    tenant: nae-prod
+    entries:
+      - [tcp_443, tcp, https, https]
+  - name: syslog
+    tenant: nae-prod
+    entries:
+      - [udp_514, udp, 514, 514]
+  - name: oracle_secure
+    tenant: nae-prod
+    entries:
+      - [tcp_2484, tcp, 2484, 2484]
+  - name: NTP
+    tenant: nae-prod
+    entries:
+      - [udp_123, udp, 123, 123]
+  - name: DHCP
+    tenant: nae-prod
+    entries:
+      - [udp_66_67, udp, 66, 67]
+  - name: JAVA_RPC
+    tenant: nae-prod
+    entries:
+      - [tcp_1823, tcp, 1823, 1823]
+  - name: oracle_default
+    tenant: nae-prod
+    entries:
+      - [icmp_temp, icmp, unspecified, unspecified]
+      - [tcp_1521, tcp, 1521, 1521]
+  - name: Kerberos
+    tenant: nae-prod
+    entries:
+      - [tcp_80, tcp, http, http]
+  - name: Cert_Based_Authentication
+    tenant: nae-prod
+    entries:
+      - [tcp_443, tcp, https, https]
+  - name: RPC
+    tenant: nae-prod
+    entries:
+      - [udp_135, udp, 135, 135]
+  - name: Hadoop_Filters
+    tenant: nae-prod
+    entries:
+      - [tcp_50020, tcp, 50020, 50020]
+      - [tcp_50105, tcp, 50105, 50105]
+      - [tcp_8020, tcp, 8020, 8020]
+      - [tcp_50090, tcp, 50090, 50090]
+      - [tcp_50030, tcp, 50030, 50030]
+      - [tcp_50075, tcp, 50075, 50075]
+      - [tcp_50070, tcp, 50070, 50070]
+      - [tcp_50060, tcp, 50060, 50060]
+      - [tcp_50010, tcp, 50010, 50010]
+  - name: ULS
+    tenant: nae-dmz
+    entries:
+      - [tcp_522, tcp, 522, 522]
+
+  - name: DNS
+    tenant: nae-dmz
+    entries:
+      - [tcp_53, tcp, dns, dns]
+      - [udp_53, udp, dns, dns]
+
+  - name: RDP
+    tenant: nae-dmz
+    entries:
+      - [tcp_3389_3390, tcp, 3389, 3390]
+
+  - name: SMTP_SSL
+    tenant: nae-dmz
+    entries:
+      - [tcp_465, tcp, 465, 465]
+
+  - name: DHCP
+    tenant: nae-dmz
+    entries:
+      - [udp_66_67, udp, 66, 67]
+
+  - name: oracle_default
+    tenant: nae-dmz
+    entries:
+      - [icmp_temp, icmp, unspecified, unspecified]
+      - [tcp_1521, tcp, 1521, 1521]
+
+  - name: JAVA_RPC
+    tenant: nae-dmz
+    entries:
+      - [tcp_1823, tcp, 1823, 1823]
+
+  - name: LDAP
+    tenant: nae-dmz
+    entries:
+      - [udp_389, udp, 389, 389]
+      - [udp_3268_3269, udp, 3268, 3269]
+      - [tcp_389, tcp, 389, 389]
+
+  - name: HTTP
+    tenant: nae-dmz
+    entries:
+      - [tcp_80, tcp, http, http]
+
+  - name: IPSEC-ISAKMP
+    tenant: nae-dmz
+    entries:
+      - [udp_500, udp, 500, 500]
+
+  - name: NAT-T
+    tenant: nae-dmz
+    entries:
+      - [udp_4500, udp, 500, 500]
+
+  - name: Cert_Based_Authentication
+    tenant: nae-dmz
+    entries:
+      - [tcp_443, tcp, https, https]
+
+  - name: RPC
+    tenant: nae-dmz
+    entries:
+      - [udp_135, udp, 135, 135]
+
+  - name: LDAP-SSL
+    tenant: nae-dmz
+    entries:
+      - [tcp_636, tcp, 636, 636]
+
+  - name: SMB
+    tenant: nae-dmz
+    entries:
+      - [tcp_445, tcp, 445, 445]
+
+  - name: X.400
+    tenant: nae-dmz
+    entries:
+      - [tcp_102, tcp, 102, 102]
+
+  - name: ADWS
+    tenant: nae-dmz
+    entries:
+      - [tcp_9389, tcp, 9389, 9389]
+
+  - name: NTP
+    tenant: nae-dmz
+    entries:
+      - [udp_123, udp, 123, 123]
+
+  - name: Hadoop_Filters
+    tenant: nae-dmz
+    entries:
+      - [tcp_50020, tcp, 50020, 50020]
+      - [tcp_50060, tcp, 50060, 50060]
+      - [tcp_50090, tcp, 50090, 50090]
+      - [tcp_50030, tcp, 50030, 50030]
+      - [tcp_50010, tcp, 50010, 50010]
+      - [tcp_8020, tcp, 8020, 8020]
+      - [tcp_50105, tcp, 50105, 50105]
+      - [tcp_50070, tcp, 50070, 50070]
+      - [tcp_50075, tcp, 50075, 50075]
+  - name: Kerberos
+    tenant: nae-dmz
+    entries:
+      - [tcp_80, tcp, http, http]
+
+  - name: oracle_updated
+    tenant: nae-dmz
+    entries:
+      - [tcp_2483, tcp, 2483, 2483]
+
+  - name: Internal_DNS
+    tenant: nae-dmz
+    entries:
+      - [udp_53, udp, dns, dns]
+
+  - name: oracle_secure
+    tenant: nae-dmz
+    entries:
+      - [tcp_2484, tcp, 2484, 2484]
+
+  - name: syslog
+    tenant: nae-dmz
+    entries:
+      - [udp_514, udp, 514, 514]
+
+  - name: HTTPS
+    tenant: nae-dmz
+    entries:
+      - [tcp_443, tcp, https, https]
+
+  - name: SSH
+    tenant: nae-dmz
+    entries:
+      - [tcp_22, tcp, 22, 22]
+  - name: ULS
+    tenant: nae-non-prod
+    entries:
+      - [tcp_522, tcp, 522, 522]
+  
+  - name: JAVA_RPC
+    tenant: nae-non-prod
+    entries:
+      - [tcp_1823, tcp, 1823, 1823]
+  
+  - name: oracle_default
+    tenant: nae-non-prod
+    entries:
+      - [tcp_1521, tcp, 1521, 1521]
+  
+  - name: Internal_DNS
+    tenant: nae-non-prod
+    entries:
+      - [udp_53, udp, dns, dns]
+  
+  - name: oracle_updated
+    tenant: nae-non-prod
+    entries:
+      - [tcp_2483, tcp, 2483, 2483]
+  
+  - name: SSH
+    tenant: nae-non-prod
+    entries:
+      - [tcp_22, tcp, 22, 22]
+  
+  - name: NAT-T
+    tenant: nae-non-prod
+    entries:
+      - [udp_4500, udp, 500, 500]
+  
+  - name: HTTPS
+    tenant: nae-non-prod
+    entries:
+      - [tcp_443, tcp, https, https]
+  
+  - name: syslog
+    tenant: nae-non-prod
+    entries:
+      - [udp_514, udp, 514, 514]
+  
+  - name: oracle_secure
+    tenant: nae-non-prod
+    entries:
+      - [tcp_2484, tcp, 2484, 2484]
+  
+  - name: LDAP
+    tenant: nae-non-prod
+    entries:
+      - [tcp_389, tcp, 389, 389]
+      - [udp_389, udp, 389, 389]
+      - [udp_3268_3269, udp, 3268, 3269]
+  
+  - name: HTTP
+    tenant: nae-non-prod
+    entries:
+      - [tcp_80, tcp, http, http]
+  
+  - name: IPSEC-ISAKMP
+    tenant: nae-non-prod
+    entries:
+      - [udp_500, udp, 500, 500]
+  
+  - name: oracle_default_leak
+    tenant: nae-non-prod
+    entries:
+      - [icmp, icmp, unspecified, unspecified]
+      - [tcp_1521, tcp, 1521, 1521]
+  
+  - name: NTP
+    tenant: nae-non-prod
+    entries:
+      - [udp_123, udp, 123, 123]
+  
+  - name: DHCP
+    tenant: nae-non-prod
+    entries:
+      - [udp_66_67, udp, 66, 67]
+  
+  - name: Hadoop_Filters
+    tenant: nae-non-prod
+    entries:
+      - [tcp_50010, tcp, 50010, 50010]
+      - [tcp_50070, tcp, 50070, 50070]
+      - [tcp_50090, tcp, 50090, 50090]
+      - [tcp_50030, tcp, 50030, 50030]
+      - [tcp_50060, tcp, 50060, 50060]
+      - [tcp_50075, tcp, 50075, 50075]
+      - [tcp_8020, tcp, 8020, 8020]
+      - [tcp_50105, tcp, 50105, 50105]
+      - [tcp_50020, tcp, 50020, 50020]
+  
+  - name: SMTP_SSL
+    tenant: nae-non-prod
+    entries:
+      - [tcp_465, tcp, 465, 465]
+  
+  - name: RDP
+    tenant: nae-non-prod
+    entries:
+      - [tcp_3389_3390, tcp, 3389, 3390]
+  
+  - name: Kerberos
+    tenant: nae-non-prod
+    entries:
+      - [tcp_80, tcp, http, http]
+  
+  - name: LDAP-SSL
+    tenant: nae-non-prod
+    entries:
+      - [tcp_636, tcp, 636, 636]
+  
+  - name: X.400
+    tenant: nae-non-prod
+    entries:
+      - [tcp_102, tcp, 102, 102]
+  
+  - name: SMB
+    tenant: nae-non-prod
+    entries:
+      - [tcp_445, tcp, 445, 445]
+  
+  - name: ADWS
+    tenant: nae-non-prod
+    entries:
+      - [tcp_9389, tcp, 9389, 9389]
+  
+  - name: RPC
+    tenant: nae-non-prod
+    entries:
+      - [udp_135, udp, 135, 135]
+  
+  - name: Cert_Based_Authentication
+    tenant: nae-non-prod
+    entries:
+      - [tcp_443, tcp, https, https]
+  
+#I use this syntax so I can use one single data set to create contracts and contract subjects mapping  
+contractToSubjects:
+  - name: P-E-PL_web-PL_app-contract
+    tenant: nae-prod
+    subj:
+      - P-E-PL_web-PL_app-subject
+  - name: P-E-common-services-contract
+    tenant: nae-prod
+    subj:
+      - P-E-common-services-subject
+  - name: P-E-all-intranet-subnets-contract
+    tenant: nae-prod
+    subj:
+      - P-E-all-intranet-subnets-subject
+  - name: P-E-all-intranet-subnets-mail-contract
+    tenant: nae-prod
+    subj:
+      - P-E-all-intranet-subnets-mail-contract
+  - name: P-E-VII_vda-OR_web-contract
+    tenant: nae-prod
+    subj:
+      - P-E-VII_vda-OR_web-subject
+  - name: P-OR_app-OR_db-contract
+    tenant: nae-prod
+    subj:
+      - P-OR_app-OR_db-subject
+  - name: P-VII_vda-EX_mail-contract
+    tenant: nae-prod
+    subj:
+      - P-VII_vda-EX_mail-subject
+  - name: P-E-OR_web-OR_app-contract
+    tenant: nae-prod
+    subj:
+      - P-E-OR_web-OR_app-subject
+  - name: P-E-VII_vda-PL_web-contract
+    tenant: nae-prod
+    subj:
+      - P-E-VII_vda-PL_web-subject
+  - name: P-VII_vda-HA_management-contract
+    tenant: nae-prod
+    subj:
+      - P-VII_vda-HA_management-subject
+  - name: P-PL_app-PL_db-contract
+    tenant: nae-prod
+    subj:
+      - P-PL_app-PL_db-subject
+  - name: P-E-PS_web-PS_app-contract
+    tenant: nae-prod
+    subj:
+      - P-E-PS_web-PS_app-subject
+  - name: P-VII_vda-HA_user-connectivity-contract
+    tenant: nae-prod
+    subj:
+      - P-VII_vda-HA_user-connectivity-subject
+  - name: P-PS_app-PS_db-contract
+    tenant: nae-prod
+    subj:
+      - P-PS_app-PS_db-subject
+  - name: P-E-administration-contract
+    tenant: nae-prod
+    subj:
+      - P-E-administration-subject
+  - name: P-E-VII_vda-PS_web-contract
+    tenant: nae-prod
+    subj:
+      - P-E-VII_vda-PS_web-subject
+  - name: D-E-PL_web-PL_app-contract
+    tenant: nae-dmz
+    subj:
+      - D-E-PL_web-PL_app-subject
+  
+  - name: D-E-common-services-contract
+    tenant: nae-dmz
+    subj:
+      - D-E-common-services-subject
+  
+  - name: D-E-PS_web-PS_app-contract
+    tenant: nae-dmz
+    subj:
+      - D-E-PS_web-PS_app-subject
+  
+  - name: D-E-VDI-contract
+    tenant: nae-dmz
+    subj:
+      - D-E-VDI-subject
+  
+  - name: D-E-DNS-contract
+    tenant: nae-dmz
+    subj:
+      - D-E-DNS-subject
+  
+  - name: D-E-OR_web-OR_app-contract
+    tenant: nae-dmz
+    subj:
+      - D-E-OR_web-OR_app-subject
+  
+  - name: D-E-administration-contract
+    tenant: nae-dmz
+    subj:
+      - D-E-administration-subject
+  
+  - name: D-E-Web-contract
+    tenant: nae-dmz
+    subj:
+      - D-E-Web-contr
+  - name: NP-PS_DB-P_PS_DB-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-PS_DB-P_PS_DB-subject
+  
+  - name: NP-PL_web-PL_app-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-PL_web-PL_app-subject
+  
+  - name: NP-VII_vda-EX_mail-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-EX_mail-subject
+  
+  - name: NP-VII_vda-PL_app-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-PL_app-subject
+  
+  - name: NP-VII_vda-PL_db-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-PL_db-subject
+  
+  - name: NP-PL_app-PL_db-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-PL_app-PL_db-subject
+  
+  - name: NP-VII_vda-HA_user-connectivity-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-HA_user-connectivity-subject
+  
+  - name: NP-VII_vda-PL_web-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-PL_web-subject
+  
+  - name: NP-VII_vda-HA_hdfs-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-HA_hdfs-subject
+  
+  - name: NP-OR_app-OR_db-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-OR_app-OR_db-subject
+  
+  - name: NP-VII_vda-OR_app-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-OR_app-subject
+  
+  - name: NP-E-administration-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-E-administration-subject
+  
+  - name: NP-VII_vda-HA_management-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-HA_management-subject
+  
+  - name: NP-E-all-intranet-subnets-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-E-all-intranet-subnets-subject
+  
+  - name: NP-PS_app-PS_db-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-PS_app-PS_db-subject
+  
+  - name: NP-VII_vda-PS_db-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-PS_db-subject
+  
+  - name: NP-PS_web-PS_app-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-PS_web-PS_app-subject
+  
+  - name: NP-VII_vda-OR_db-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-OR_db-subject
+  
+  - name: NP-VII_vda-OR_web-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-OR_web-subject
+  
+  - name: NP-VII_vda-PS_app-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-PS_app-subject
+  
+  - name: NP-OR_web-OR_app-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-OR_web-OR_app-subject
+  
+  - name: NP-VII_vda-PS_web-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-VII_vda-PS_web-subject
+  
+  - name: NP-E-common-services-contract
+    tenant: nae-non-prod
+    subj:
+      - NP-E-common-services-subject
+  
+subjectFilter:
+  - name: P-E-PL_web-PL_app-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-PL_web-PL_app-subject,JAVA_RPC]
+  - name: P-E-common-services-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-common-services-subject,NTP]
+      - [P-E-common-services-subject,LDAP-SSL]
+      - [P-E-common-services-subject,Kerberos]
+      - [P-E-common-services-subject,NAT-T]
+      - [P-E-common-services-subject,ADWS]
+      - [P-E-common-services-subject,RPC]
+      - [P-E-common-services-subject,DHCP]
+      - [P-E-common-services-subject,HTTPS]
+      - [P-E-common-services-subject,syslog]
+      - [P-E-common-services-subject,IPSEC-ISAKMP]
+      - [P-E-common-services-subject,SMB]
+      - [P-E-common-services-subject,LDAP]
+  - name: P-E-all-intranet-subnets-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-all-intranet-subnets-subject,RDP]
+  - name: P-E-all-intranet-subnets-mail-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-all-intranet-subnets-mail-contract,HTTPS]
+      - [P-E-all-intranet-subnets-mail-contract,RPC]
+      - [P-E-all-intranet-subnets-mail-contract,SMTP_SSL]
+      - [P-E-all-intranet-subnets-mail-contract,ULS]
+      - [P-E-all-intranet-subnets-mail-contract,X.400]
+  - name: P-E-VII_vda-OR_web-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-VII_vda-OR_web-subject,icmp]
+      - [P-E-VII_vda-OR_web-subject,RDP]
+      - [P-E-VII_vda-OR_web-subject,HTTP]
+      - [P-E-VII_vda-OR_web-subject,HTTPS]
+      - [P-E-VII_vda-OR_web-subject,SSH]
+  - name: P-OR_app-OR_db-contract
+    tenant: nae-prod
+    subj:
+      - [P-OR_app-OR_db-subject,oracle_secure]
+      - [P-OR_app-OR_db-subject,oracle_updated]
+      - [P-OR_app-OR_db-subject,oracle_default]
+  - name: P-VII_vda-EX_mail-contract
+    tenant: nae-prod
+    subj:
+      - [P-VII_vda-EX_mail-subject,ULS]
+      - [P-VII_vda-EX_mail-subject,X.400]
+      - [P-VII_vda-EX_mail-subject,RPC]
+      - [P-VII_vda-EX_mail-subject,SMTP_SSL]
+      - [P-VII_vda-EX_mail-subject,HTTPS]
+  - name: P-E-OR_web-OR_app-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-OR_web-OR_app-subject,JAVA_RPC]
+  - name: P-E-VII_vda-PL_web-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-VII_vda-PL_web-subject,icmp]
+      - [P-E-VII_vda-PL_web-subject,HTTPS]
+      - [P-E-VII_vda-PL_web-subject,SSH]
+      - [P-E-VII_vda-PL_web-subject,HTTP]
+      - [P-E-VII_vda-PL_web-subject,RDP]
+  - name: P-VII_vda-HA_management-contract
+    tenant: nae-prod
+    subj:
+      - [P-VII_vda-HA_management-subject,HTTPS]
+      - [P-VII_vda-HA_management-subject,SSH]
+      - [P-VII_vda-HA_management-subject,icmp]
+  - name: P-PL_app-PL_db-contract
+    tenant: nae-prod
+    subj:
+      - [P-PL_app-PL_db-subject,oracle_default]
+      - [P-PL_app-PL_db-subject,oracle_updated]
+      - [P-PL_app-PL_db-subject,oracle_secure]
+  - name: P-E-PS_web-PS_app-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-PS_web-PS_app-subject,JAVA_RPC]
+  - name: P-VII_vda-HA_user-connectivity-contract
+    tenant: nae-prod
+    subj:
+      - [P-VII_vda-HA_user-connectivity-subject,Hadoop_Filters]
+  - name: P-PS_app-PS_db-contract
+    tenant: nae-prod
+    subj:
+      - [P-PS_app-PS_db-subject,oracle_default]
+      - [P-PS_app-PS_db-subject,oracle_secure]
+      - [P-PS_app-PS_db-subject,oracle_updated]
+  - name: P-E-administration-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-administration-subject,SSH]
+      - [P-E-administration-subject,icmp]
+      - [P-E-administration-subject,RDP]
+  - name: P-E-VII_vda-PS_web-contract
+    tenant: nae-prod
+    subj:
+      - [P-E-VII_vda-PS_web-subject,icmp]
+      - [P-E-VII_vda-PS_web-subject,RDP]
+      - [P-E-VII_vda-PS_web-subject,HTTP]
+      - [P-E-VII_vda-PS_web-subject,SSH]
+      - [P-E-VII_vda-PS_web-subject,HTTPS]
+  - name: D-E-PL_web-PL_app-contract
+    tenant: nae-dmz
+    subj:
+      - [D-E-PL_web-PL_app-subject,JAVA_RPC]
+  
+  - name: D-E-common-services-contract
+    tenant: nae-dmz
+    subj:
+      - [D-E-common-services-subject,Kerberos]
+      - [D-E-common-services-subject,Internal_DNS]
+      - [D-E-common-services-subject,LDAP-SSL]
+      - [D-E-common-services-subject,IPSEC-ISAKMP]
+      - [D-E-common-services-subject,NTP]
+      - [D-E-common-services-subject,LDAP]
+      - [D-E-common-services-subject,SMB]
+      - [D-E-common-services-subject,RPC]
+      - [D-E-common-services-subject,DHCP]
+      - [D-E-common-services-subject,syslog]
+      - [D-E-common-services-subject,HTTPS]
+      - [D-E-common-services-subject,NAT-T]
+  
+  - name: D-E-PS_web-PS_app-contract
+    tenant: nae-dmz
+    subj:
+      - [D-E-PS_web-PS_app-subject,JAVA_RPC]
+  
+  - name: D-E-VDI-contract
+    tenant: nae-dmz
+    subj:
+      - [D-E-VDI-subject,RDP]
+  
+  - name: D-E-DNS-contract
+    tenant: nae-dmz
+    subj:
+      - [D-E-DNS-subject,DNS]
+  
+  - name: D-E-OR_web-OR_app-contract
+    tenant: nae-dmz
+    subj:
+      - [D-E-OR_web-OR_app-subject,JAVA_RPC]
+  
+  - name: D-E-administration-contract
+    tenant: nae-dmz
+    subj:
+      - [D-E-administration-subject,SSH]
+      - [D-E-administration-subject,icmp]
+      - [D-E-administration-subject,RDP]
+  
+  - name: D-E-Web-contract
+    tenant: nae-dmz
+    subj:
+      - [D-E-Web-contr,icmp]
+      - [D-E-Web-contr,HTTPS]
+      - [D-E-Web-contr,HTTP]
+
+epgToContract:
+  - [nae-prod,hadoop-ap,hadoop-user-connectivity-epg,provider ,P-VII_vda-HA_user-connectivity-contract]
+  - [nae-prod,hadoop-ap,hadoop-mgmt-epg,provider ,P-E-administration-contract]
+  - [nae-prod,hadoop-ap,hadoop-mgmt-epg,provider ,P-VII_vda-HA_management-contract]
+  - [nae-prod,ordering-ap,ordering-db-tier-epg,provider ,P-OR_app-OR_db-contract]
+  - [nae-prod,ordering-ap,ordering-db-tier-epg,provider ,P-E-administration-contract]
+  - [nae-prod,ordering-ap,ordering-app-tier-epg,provider ,P-E-OR_web-OR_app-contract]
+  - [nae-prod,ordering-ap,ordering-app-tier-epg,provider ,P-E-administration-contract]
+  - [nae-prod,exchange-ap,exchange-mail-epg,provider ,P-E-all-intranet-subnets-mail-contract]
+  - [nae-prod,exchange-ap,exchange-mail-epg,provider ,P-VII_vda-EX_mail-contract]
+  - [nae-prod,payroll-ap,payroll-app-tier-epg,provider ,P-E-administration-contract]
+  - [nae-prod,payroll-ap,payroll-app-tier-epg,provider ,P-E-PL_web-PL_app-contract]
+  - [nae-prod,payroll-ap,payroll-db-tier-epg,provider ,P-PL_app-PL_db-contract]
+  - [nae-prod,payroll-ap,payroll-db-tier-epg,provider ,P-E-administration-contract]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,provider ,P-E-administration-contract]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,provider ,P-E-all-intranet-subnets-contract]
+  - [nae-prod,petstore-ap,petstore-db-tier-epg,provider ,P-PS_app-PS_db-contract]
+  - [nae-prod,petstore-ap,petstore-db-tier-epg,provider ,P-E-administration-contract]
+  - [nae-prod,petstore-ap,petstore-app-tier-epg,provider ,P-E-administration-contract]
+  - [nae-prod,petstore-ap,petstore-app-tier-epg,provider ,P-E-PS_web-PS_app-contract]
+  - [nae-prod,hadoop-ap,hadoop-hdfs-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,hadoop-ap,hadoop-mgmt-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,ordering-ap,ordering-db-tier-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,ordering-ap,ordering-app-tier-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,ordering-ap,ordering-app-tier-epg,consumer ,P-OR_app-OR_db-contract]
+  - [nae-prod,exchange-ap,exchange-mail-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,payroll-ap,payroll-app-tier-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,payroll-ap,payroll-app-tier-epg,consumer ,P-PL_app-PL_db-contract]
+  - [nae-prod,payroll-ap,payroll-db-tier-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,P-E-VII_vda-PL_web-contract]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,P-VII_vda-HA_management-contract]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,P-VII_vda-HA_user-connectivity-contract]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,P-VII_vda-EX_mail-contract]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,P-E-VII_vda-PS_web-contract]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,P-E-VII_vda-OR_web-contract]
+  - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,petstore-ap,petstore-db-tier-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,petstore-ap,petstore-app-tier-epg,consumer ,P-E-common-services-contract]
+  - [nae-prod,petstore-ap,petstore-app-tier-epg,consumer ,P-PS_app-PS_db-contract]
+  - [nae-dmz,petstore-ap,petstore-web-tier-epg,provider ,D-E-administration-contract]
+  - [nae-dmz,petstore-ap,petstore-web-tier-epg,provider ,D-E-Web-contract]
+  - [nae-dmz,payroll-ap,payroll-web-tier-epg,provider ,D-E-Web-contract]
+  - [nae-dmz,payroll-ap,payroll-web-tier-epg,provider ,D-E-administration-contract]
+  - [nae-dmz,ordering-ap,ordering-web-tier-epg,provider ,D-E-Web-contract]
+  - [nae-dmz,ordering-ap,ordering-web-tier-epg,provider ,D-E-administration-contract]
+  - [nae-dmz,partner-vdi-ap,partner-vdi-desktops-epg,provider ,D-E-VDI-contract]
+  - [nae-dmz,partner-vdi-ap,partner-vdi-desktops-epg,provider ,D-E-administration-contract]
+  - [nae-dmz,external-dns-ap,external-dns-epg,provider ,D-E-DNS-contract]
+  - [nae-dmz,petstore-ap,petstore-web-tier-epg,consumer ,D-E-PS_web-PS_app-contract]
+  - [nae-dmz,petstore-ap,petstore-web-tier-epg,consumer ,D-E-common-services-contract]
+  - [nae-dmz,payroll-ap,payroll-web-tier-epg,consumer ,D-E-common-services-contract]
+  - [nae-dmz,payroll-ap,payroll-web-tier-epg,consumer ,D-E-PL_web-PL_app-contract]
+  - [nae-dmz,ordering-ap,ordering-web-tier-epg,consumer ,D-E-common-services-contract]
+  - [nae-dmz,ordering-ap,ordering-web-tier-epg,consumer ,D-E-OR_web-OR_app-contract]
+  - [nae-dmz,partner-vdi-ap,partner-vdi-desktops-epg,consumer ,D-E-common-services-contract]
+  - [nae-non-prod,ordering-ap,ordering-web-tier-epg,consumer ,NP-OR_web-OR_app-contract]
+  - [nae-non-prod,ordering-ap,ordering-web-tier-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,ordering-ap,ordering-db-tier-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,ordering-ap,ordering-app-tier-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,ordering-ap,ordering-app-tier-epg,consumer ,NP-OR_app-OR_db-contract]
+  - [nae-non-prod,hadoop-ap,hadoop-mgmt-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,hadoop-ap,hadoop-user-connectivity-epg,consumer ,NP-E-all-intranet-subnets-contract]
+  - [nae-non-prod,exchange-ap,exchange-mail-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,petstore-ap,petstore-app-tier-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,petstore-ap,petstore-app-tier-epg,consumer ,NP-PS_app-PS_db-contract]
+  - [nae-non-prod,petstore-ap,petstore-db-tier-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,petstore-ap,petstore-web-tier-epg,consumer ,NP-PS_web-PS_app-contract]
+  - [nae-non-prod,petstore-ap,petstore-web-tier-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,payroll-ap,payroll-web-tier-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,payroll-ap,payroll-web-tier-epg,consumer ,NP-PL_web-PL_app-contract]
+  - [nae-non-prod,payroll-ap,payroll-db-tier-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,payroll-ap,payroll-app-tier-epg,consumer ,NP-PL_app-PL_db-contract]
+  - [nae-non-prod,payroll-ap,payroll-app-tier-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-HA_hdfs-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-OR_app-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-PL_db-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-E-common-services-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-PS_web-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-PL_web-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-PS_app-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-OR_web-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-HA_management-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-PS_db-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-HA_user-connectivity-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-PL_app-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-OR_db-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,consumer ,NP-VII_vda-EX_mail-contract]
+  - [nae-non-prod,ordering-ap,ordering-web-tier-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,ordering-ap,ordering-web-tier-epg,provider ,NP-VII_vda-OR_web-contract]
+  - [nae-non-prod,ordering-ap,ordering-db-tier-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,ordering-ap,ordering-db-tier-epg,provider ,NP-OR_app-OR_db-contract]
+  - [nae-non-prod,ordering-ap,ordering-db-tier-epg,provider ,NP-VII_vda-OR_db-contract]
+  - [nae-non-prod,ordering-ap,ordering-app-tier-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,ordering-ap,ordering-app-tier-epg,provider ,NP-VII_vda-OR_app-contract]
+  - [nae-non-prod,ordering-ap,ordering-app-tier-epg,provider ,NP-OR_web-OR_app-contract]
+  - [nae-non-prod,hadoop-ap,hadoop-mgmt-epg,provider ,NP-VII_vda-HA_management-contract]
+  - [nae-non-prod,hadoop-ap,hadoop-mgmt-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,hadoop-ap,hadoop-hdfs-epg,provider ,NP-VII_vda-HA_hdfs-contract]
+  - [nae-non-prod,hadoop-ap,hadoop-user-connectivity-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,hadoop-ap,hadoop-user-connectivity-epg,provider ,NP-VII_vda-HA_user-connectivity-contract]
+  - [nae-non-prod,exchange-ap,exchange-mail-epg,provider ,NP-VII_vda-EX_mail-contract]
+  - [nae-non-prod,exchange-ap,exchange-mail-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,petstore-ap,petstore-app-tier-epg,provider ,NP-PS_web-PS_app-contract]
+  - [nae-non-prod,petstore-ap,petstore-app-tier-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,petstore-ap,petstore-app-tier-epg,provider ,NP-VII_vda-PS_app-contract]
+  - [nae-non-prod,petstore-ap,petstore-db-tier-epg,provider ,NP-PS_DB-P_PS_DB-contract]
+  - [nae-non-prod,petstore-ap,petstore-db-tier-epg,provider ,NP-PS_app-PS_db-contract]
+  - [nae-non-prod,petstore-ap,petstore-db-tier-epg,provider ,NP-VII_vda-PS_db-contract]
+  - [nae-non-prod,petstore-ap,petstore-db-tier-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,petstore-ap,petstore-web-tier-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,petstore-ap,petstore-web-tier-epg,provider ,NP-VII_vda-PS_web-contract]
+  - [nae-non-prod,payroll-ap,payroll-web-tier-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,payroll-ap,payroll-web-tier-epg,provider ,NP-VII_vda-PL_web-contract]
+  - [nae-non-prod,payroll-ap,payroll-db-tier-epg,provider ,NP-PL_app-PL_db-contract]
+  - [nae-non-prod,payroll-ap,payroll-db-tier-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,payroll-ap,payroll-db-tier-epg,provider ,NP-VII_vda-PL_db-contract]
+  - [nae-non-prod,payroll-ap,payroll-app-tier-epg,provider ,NP-PL_web-PL_app-contract]
+  - [nae-non-prod,payroll-ap,payroll-app-tier-epg,provider ,NP-VII_vda-PL_app-contract]
+  - [nae-non-prod,payroll-ap,payroll-app-tier-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,provider ,NP-E-administration-contract]
+  - [nae-non-prod,internal-vdi-ap,internal-vdi-desktops-epg,provider ,NP-E-all-intranet-subnets-contract]

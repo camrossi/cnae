@@ -1,0 +1,184 @@
+---
+- set_fact:
+    aci_login: &aci_login
+      hostname: "{{ inventory_hostname }}"
+      username: "{{ aci_temp_username }}"
+      private_key: "{{ './roles/aci/files/'+ aci_temp_username + '-user.key' }}"
+      certificate_name: "{{ aci_temp_username }}"
+      use_proxy: "no"
+      validate_certs: "{{ validate_certs }}"
+      port: "{{ port }}"
+
+- name: Ensure NAE tenant exists
+  cisco.aci.aci_tenant:
+    <<: *aci_login
+    name: "{{ item }}"
+    descr: "NAE Demo"
+  with_items:
+    - "{{ tenants }}"
+  tags:
+    - apic_config
+
+- name: Ensure VRFs exists
+  cisco.aci.aci_vrf:
+    <<: *aci_login
+    tenant: "{{ item.0 }}"
+    vrf: "{{ item.1 }}"
+    state: present
+  with_items:
+    - "{{ vrfs }}"
+  tags:
+    - apic_config
+
+- name: Ensure BDs exists
+  cisco.aci.aci_bd:
+    <<: *aci_login
+    tenant: "{{ item.0 }}"
+    bd: "{{ item.1 }}"
+    vrf: "{{ item.2 }}"
+    state: present
+  with_items:
+    - "{{ bds }}"
+  tags:
+    - apic_config
+
+- name: 'check on async task'
+  async_status:
+    jid: "{{ async_poll.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 30
+  tags:
+    - apic_config
+
+- name: Ensure BD Subnet exists
+  cisco.aci.aci_bd_subnet:
+    <<: *aci_login
+    tenant: "{{ item.0 }}"
+    bd: "{{ item.1 }}"
+    gateway: "{{ item.3 }}"
+    mask: "{{ item.4 }}"
+    state: present
+  with_items:
+    - "{{ bds }}"
+  tags:
+    - apic_config
+
+- name: Ensure App Profile Exists
+  cisco.aci.aci_ap:
+    <<: *aci_login
+    tenant: "{{ item.0 }}"
+    ap: "{{ item.1  }}"
+    state: present
+  with_items:
+    - "{{ apps }}"
+  tags:
+    - apic_config
+
+- name: Ensure EPGs Exists
+  cisco.aci.aci_epg:
+    <<: *aci_login
+    tenant: "{{ item.0 }}"
+    ap: "{{ item.1 }}"
+    epg: "{{ item.2 }}"
+    bd: "{{ item.3 }}"
+    state: present
+  with_items:
+    - "{{ epgs }}"
+  tags:
+    - apic_config
+
+- name: Ensure Filter Exists
+  cisco.aci.aci_filter:
+    <<: *aci_login
+    tenant: "{{ item.tenant }}"
+    filter: "{{ item.name }}"
+    state: present
+  with_items:
+    - "{{ filters }}"
+  tags:
+    - apic_config
+
+- name: Ensure Filter Entries Exists
+  cisco.aci.aci_filter_entry:
+    <<: *aci_login
+    tenant: "{{ item.0.tenant }}"
+    filter: "{{ item.0.name }}"
+    entry: "{{ item.1.0 }}"
+    ip_protocol: "{{ item.1.1 }}"
+    ether_type: ip
+    dst_port_start: "{{ item.1.2 }}"
+    dst_port_end: "{{ item.1.3 }}"
+    state: present
+  with_subelements:
+    - "{{ filters }}"
+    - entries
+  tags:
+    - apic_config
+
+- name: Ensure Contract Exists
+  cisco.aci.aci_contract:
+    <<: *aci_login
+    tenant: "{{ item.tenant }}"
+    contract: "{{ item.name }}"
+    state: present
+  with_items:
+    - "{{ contractToSubjects }}"
+  tags:
+    - apic_config
+
+- name: Ensure Contract Subject Exists
+  cisco.aci.aci_contract_subject:
+    <<: *aci_login
+    tenant: "{{ item.0.tenant }}"
+    contract: "{{ item.0.name }}"
+    subject: "{{ item.1 }}"
+    state: present
+  with_subelements:
+    - "{{ contractToSubjects }}"
+    - subj
+  tags:
+    - apic_config
+
+- name: Ensure Subject and Filter Mapping Exists
+  cisco.aci.aci_contract_subject_to_filter:
+    <<: *aci_login
+    tenant: "{{ item.0.tenant }}"
+    contract: "{{ item.0.name }}"
+    subject: "{{ item.1.0 }}"
+    filter: "{{ item.1.1 }}"
+    state: present
+  with_subelements:
+    - "{{ subjectFilter }}"
+    - subj
+  tags:
+    - apic_config
+
+- name: Map Contracts and EPGs
+  cisco.aci.aci_epg_to_contract:
+    <<: *aci_login
+    tenant: "{{ item.0 }}"
+    ap: "{{ item.1 }}"
+    epg: "{{ item.2 }}"
+    contract: "{{ item.4 }}"
+    contract_type: "{{ item.3 }}"
+    state: present
+  with_items:
+    - "{{ epgToContract }}"
+  tags:
+    - apic_config
+
+- name: Map Contracts and EPGs
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_login
+    tenant: "{{ item.0 }}"
+    ap: "{{ item.1 }}"
+    epg: "{{ item.2 }}"
+    domain: "{{ vmm_domain }}"
+    vm_provider: vmware
+    domain_type: vmm
+    state: present
+  with_items:
+    - "{{ epgs }}"
+  tags:
+    - apic_config2

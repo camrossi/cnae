@@ -427,9 +427,9 @@ changes ='''[{
             }
           },
           {
-            "fvRsCons": {
+            "fvRsProv": {
               "attributes": {
-                "tnVzBrCPName": "Web_DB",
+                "tnVzBrCPName": "WS_To_DB",
                 "pcv_status": "created"
               }
             }

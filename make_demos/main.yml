@@ -1,0 +1,8 @@
+---
+- name: Configure ACI 
+  hosts: apic
+  connection: local
+  gather_facts: no
+
+  roles:
+    - role: aci

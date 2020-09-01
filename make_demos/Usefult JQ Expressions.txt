@@ -1,0 +1,40 @@
+Create DB List
+cat LOGICAL_TENANTQf02HCP444 | jq -rj '.imdata[0].fvTenant.attributes.name as $tenant| .imdata[0].fvTenant.children[] | select(.fvBD) | "  - [" + $tenant + ", " , .fvBD.attributes.name +", ", (.fvBD.children[]| select(.fvRsCtx) | .fvRsCtx.attributes.tnFvCtxName) +", ", (.fvBD.children[]| select(.fvSubnet)| (.fvSubnet.attributes.ip | split("/")[0]) +",", (.fvSubnet.attributes.ip | split("/")[1] + "]\n"))'
+
+Generate App  List:
+
+cat LOGICAL_TENANTQf02HCP444 | jq -rj '.imdata[0].fvTenant.attributes.name as $tenant | .imdata[0].fvTenant.children[] | select(.fvAp) | "  - [" + $tenant +",", .fvAp.attributes.name + "]\n"'
+
+
+Generate EPG List:
+
+cat LOGICAL_TENANTQf02HCP444 | jq -rj '.imdata[0].fvTenant.attributes.name as $tenant | .imdata[0].fvTenant.children[] | select(.fvAp) | .fvAp.attributes.name as $app | (.[].children[]  | select(.fvAEPg) | "  - [" + $tenant + "," + $app+",", .fvAEPg.attributes.name + ", " , (.fvAEPg.children[] | select(.fvRsBd) | .fvRsBd.attributes.tnFvBDName) + "]\n")'
+
+Generate Fitlers from an APIC tenant config
+cat LOGICAL_TENANTQf02HCP444 | jq -jr   '.imdata[0].fvTenant.attributes.name as $tenant | .imdata[0].fvTenant.children[] | select(.vzFilter) | "\n- name: " + .vzFilter.attributes.name +"\n  tenant: " + $tenant + "\n  entries:\n", (.[].children[] |  select(.vzEntry) |  "    - [" + .vzEntry.attributes.name + ", " , .vzEntry.attributes.prot + ", " , .vzEntry.attributes.dFromPort + ", ", .vzEntry.attributes.dToPort + "]\n")'
+
+
+Map Contract and Subjects
+cat LOGICAL_TENANTQf02HCP444 | jq -jr   '.imdata[0].fvTenant.attributes.name as $tenant |.imdata[0].fvTenant.children[] | select(.vzBrCP) | "\n- name: " + .vzBrCP.attributes.name + "\n  tenant: " + $tenant + "\n  subj:\n" , (.[].children[] |  select(.vzSubj) | "    - " + .vzSubj.attributes.name + "\n" )'
+
+Map Contracts-Subjects and entries in a way that Ansible can work with it 
+cat LOGICAL_TENANTQf02HCP444  | jq -jr   '.imdata[0].fvTenant.attributes.name as $tenant | .imdata[0].fvTenant.children[] | select(.vzBrCP) | "\n- name: " + .vzBrCP.attributes.name + "\n  tenant: " + $tenant + "\n  subj:\n" ,  (.[].children[] |  select(.vzSubj) | .vzSubj.attributes.name as $sub | (.[].children[] | select(.vzRsSubjFiltAtt) |  "    - [" + $sub +","  , .vzRsSubjFiltAtt.attributes.tnVzFilterName + "]\n"))'
+Exaple: 
+- name: P-E-VII_vda-PS_web-contract
+  tenant: nae-prod
+  subj:
+    - [P-E-VII_vda-PS_web-subject,icmp]
+    - [P-E-VII_vda-PS_web-subject,RDP]
+    - [P-E-VII_vda-PS_web-subject,HTTP]
+    - [P-E-VII_vda-PS_web-subject,SSH]
+    - [P-E-VII_vda-PS_web-subject,HTTPS]
+
+
+
+Map EPG to Contract
+cat LOGICAL_TENANTQf02HCP444 | jq -rj '.imdata[0].fvTenant.attributes.name as $tenant |  .imdata[0].fvTenant.children[] | select(.fvAp) | .fvAp.attributes.name as $app | (.[].children[]  | select(.fvAEPg) | .fvAEPg.attributes.name as $epg  | .fvAEPg.children[] | select(.fvRsProv) | "  - [" + $tenant + "," + $app+",", $epg+",", "provider ," , .fvRsProv.attributes.tnVzBrCPName + "]\n")'
+cat LOGICAL_TENANTQf02HCP444 | jq -rj '.imdata[0].fvTenant.attributes.name as $tenant |  .imdata[0].fvTenant.children[] | select(.fvAp) | .fvAp.attributes.name as $app | (.[].children[]  | select(.fvAEPg) | .fvAEPg.attributes.name as $epg  | .fvAEPg.children[] | select(.fvRsCons) | "  - [" + $tenant + "," + $app+",", $epg+",", "consumer ," , .fvRsCons.attributes.tnVzBrCPName + "]\n")'
+
+
+
+ansible-playbook -i inventory.yaml main.yml --tags="apic_config"  219.04s user 64.56s system 64% cpu 7:22.85 total
