@@ -2,3 +2,7 @@ __pycache__
 logout.lock
 *.swp
 .DS_Store
+*.crt
+*.csr
+*.key
+*.tar.gz
