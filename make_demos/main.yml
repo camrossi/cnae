@@ -3,6 +3,12 @@
   hosts: apic
   connection: local
   gather_facts: no
-
   roles:
     - role: aci
+
+- name: NAE Analysis
+  hosts: nae
+  gather_facts: no
+  connection: local
+  roles:
+    - role: nae 

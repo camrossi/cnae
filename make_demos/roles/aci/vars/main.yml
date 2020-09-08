@@ -4,8 +4,8 @@ tenants:
   - nae-dmz
 
 vrfs:
-  - ['nae-prod', 'nae-prod-vrf']
-  - ['nae-non-prod', 'nae-non-prod-vrf']
+  - ['nae-prod', 'prod-vrf']
+  - ['nae-non-prod', 'non-prod-vrf']
   - ['nae-dmz','dmz-vrf']
 bds:
   - [nae-prod, prod-l2only-bd, prod-vrf,   10.72.0.1,24]
@@ -27,10 +27,10 @@ bds:
   - [nae-non-prod, non-prod-db-bd, non-prod-vrf, 10.13.0.1,24]
   - [nae-non-prod, non-prod-exchange-mail-bd, non-prod-vrf, 10.14.0.1,24]
   - [nae-non-prod, non-prod-hadoop-user-connectivity-bd, non-prod-vrf, 10.16.0.1,24]
-  - [dmz, dmz-web-bd, dmz-vrf, 10.129.0.1,24]
-  - [dmz, dmz-partner-vdi-bd, dmz-vrf, 10.131.0.1,24]
-  - [dmz, dmz-l2only-bd, dmz-vrf, 10.132.0.1,24]
-  - [dmz, dmz-ext-dns-bd, dmz-vrf, 10.130.0.1,24]
+  - [nae-dmz, dmz-web-bd, dmz-vrf, 10.129.0.1,24]
+  - [nae-dmz, dmz-partner-vdi-bd, dmz-vrf, 10.131.0.1,24]
+  - [nae-dmz, dmz-l2only-bd, dmz-vrf, 10.132.0.1,24]
+  - [nae-dmz, dmz-ext-dns-bd, dmz-vrf, 10.130.0.1,24]
 
 
 apps: 
@@ -413,7 +413,7 @@ filters:
       - [udp_500, udp, 500, 500]
   
   - name: oracle_default_leak
-    tenant: nae-non-prod
+    tenant: common
     entries:
       - [icmp, icmp, unspecified, unspecified]
       - [tcp_1521, tcp, 1521, 1521]
@@ -592,7 +592,7 @@ contractToSubjects:
     subj:
       - D-E-Web-contr
   - name: NP-PS_DB-P_PS_DB-contract
-    tenant: nae-non-prod
+    tenant: common
     subj:
       - NP-PS_DB-P_PS_DB-subject
   
@@ -707,6 +707,10 @@ contractToSubjects:
       - NP-E-common-services-subject
   
 subjectFilter:
+  - name: NP-PS_DB-P_PS_DB-contract
+    tenant: common
+    subj:
+      - [NP-PS_DB-P_PS_DB-subject,oracle_default_leak]
   - name: P-E-PL_web-PL_app-contract
     tenant: nae-prod
     subj:
@@ -885,6 +889,7 @@ epgToContract:
   - [nae-prod,internal-vdi-ap,internal-vdi-desktops-epg,provider ,P-E-all-intranet-subnets-contract]
   - [nae-prod,petstore-ap,petstore-db-tier-epg,provider ,P-PS_app-PS_db-contract]
   - [nae-prod,petstore-ap,petstore-db-tier-epg,provider ,P-E-administration-contract]
+  - [nae-prod,petstore-ap,petstore-db-tier-epg,consumer ,NP-PS_DB-P_PS_DB-contract]
   - [nae-prod,petstore-ap,petstore-app-tier-epg,provider ,P-E-administration-contract]
   - [nae-prod,petstore-ap,petstore-app-tier-epg,provider ,P-E-PS_web-PS_app-contract]
   - [nae-prod,hadoop-ap,hadoop-hdfs-epg,consumer ,P-E-common-services-contract]

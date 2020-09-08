@@ -1,19 +1,49 @@
 ---
+- set_fact:
+    aci_login: &aci_login
+      hostname: "{{ inventory_hostname }}"
+      username: "{{ aci_temp_username }}"
+      private_key: "{{ './roles/aci/files/'+ aci_temp_username + '-user.key' }}"
+      certificate_name: "{{ aci_temp_username }}"
+      use_proxy: "no"
+      validate_certs: "{{ validate_certs }}"
+      port: "{{ port }}"
+
 - name: Delete NAE tenants
   cisco.aci.aci_tenant:
-    hostname: "{{ inventory_hostname }}"
-    username: "{{ aci_temp_username }}"
-    private_key: "{{ './roles/aci/files/'+ aci_temp_username + '-user.key' }}"
-    certificate_name: "{{ aci_temp_username }}"
-    use_proxy: "no"
-    validate_certs: "{{ validate_certs }}"
-    port: "{{ port }}"
+    <<: *aci_login
     name: "{{ item }}"
     state: absent
   with_items:
     - "{{ tenants }}"
   tags:
     - delete_tenants
+
+- name: Delete Contracts in Common
+  cisco.aci.aci_contract:
+    <<: *aci_login
+    tenant: "{{ item.tenant }}"
+    contract: "{{ item.name }}"
+    state: absent
+  with_items:
+    - "{{ contractToSubjects }}"
+  when:
+    - item.tenant == "common"
+  tags:
+    - delete_common_contracts
+
+- name: Delete Filter in Common 
+  cisco.aci.aci_filter:
+    <<: *aci_login
+    tenant: "{{ item.tenant }}"
+    filter: "{{ item.name }}"
+    state: absent
+  with_items:
+    - "{{ filters }}"
+  when:
+    - item.tenant == "common"
+  tags:
+    - delete_common_contracts
 
 - name: Delete temporary user
   cisco.aci.aci_aaa_user:

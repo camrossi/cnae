@@ -38,3 +38,23 @@ cat LOGICAL_TENANTQf02HCP444 | jq -rj '.imdata[0].fvTenant.attributes.name as $t
 
 
 ansible-playbook -i inventory.yaml main.yml --tags="apic_config"  219.04s user 64.56s system 64% cpu 7:22.85 total
+
+
+
+
+
+
+  - name: NP-PS_DB-P_PS_DB-contract
+    tenant: common
+    subj:
+      - NP-PS_DB-P_PS_DB-subject
+
+
+subjectFilter:
+  - name: NP-PS_DB-P_PS_DB-contract
+    tenant: common
+    subj:
+      - [NP-PS_DB-P_PS_DB-subject,oracle_default_leak]
+
+
+        - [nae-non-prod,petstore-ap,petstore-db-tier-epg,provider ,NP-PS_DB-P_PS_DB-contract]

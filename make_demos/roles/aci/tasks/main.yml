@@ -1,4 +1,6 @@
 - include: cleanup.yml
 - include: user.yml
-- include: tenants.yml        
+- include: aci-base-config.yml
+- include: change_management.yml
+ 
 #- include: cleanup.yml

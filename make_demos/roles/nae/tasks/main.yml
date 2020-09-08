@@ -1,0 +1,66 @@
+---
+- set_fact:
+    nae_login: &nae_login
+      host: "{{ inventory_hostname }}"
+      username: "{{ admin_user }}"
+      password: "{{ admin_pass }}"
+      validate_certs: "{{ validate_certs }}"
+      port: "{{ port }}"
+
+- name: Create AG
+  cisco.nae.nae_ag:
+    <<: *nae_login
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ ags }}"
+  tags:
+    - nae_config
+
+- name: Upload Files
+  cisco.nae.nae_file_management:
+    <<: *nae_login
+    file: "{{ item }}"
+    #Get the file name and remove the date i.e. a file name is somehting like this aci/files/datasets/ChangeMgmt2_2020-09-03_23_22_28.tar.gz
+    name: "{{ item.split('/')[-1].split('_')[0] }}" 
+    state: present
+  with_fileglob:
+    - "roles/aci/files/datasets/*.tar.gz"
+  tags:
+    - nae_config
+
+- name: Do Offline Analysis
+  cisco.nae.nae_offline_analysis:
+    <<: *nae_login
+    state: present
+    complete: true
+    name: "{{ item.split('/')[-1].split('_')[0] }}"
+    ag_name: "Change Management"
+    filename: "{{ item.split('/')[-1].split('_')[0] }}"
+  with_fileglob:
+    - "roles/aci/files/datasets/*.tar.gz"
+  tags:
+    - nae_config
+
+
+- name: Delete AG
+  cisco.nae.nae_ag:
+    <<: *nae_login
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ ags }}"
+  tags:
+    - nae_wipe
+
+- name: Delete Files
+  cisco.nae.nae_file_management:
+    <<: *nae_login
+    file: "{{ item }}"
+    #Get the file name and remove the date i.e. a file name is somehting like this aci/files/datasets/ChangeMgmt2_2020-09-03_23_22_28.tar.gz
+    name: "{{ item.split('/')[-1].split('_')[0] }}" 
+    state: absent
+  with_fileglob:
+    - "roles/aci/files/datasets/*.tar.gz"
+  tags:
+    - nae_wipe

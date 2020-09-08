@@ -49,6 +49,7 @@
     bd: "{{ item.1 }}"
     gateway: "{{ item.3 }}"
     mask: "{{ item.4 }}"
+    scope: [shared]
     state: present
   with_items:
     - "{{ bds }}"
@@ -145,7 +146,7 @@
   tags:
     - apic_config
 
-- name: Map Contracts and EPGs
+- name: Ensure EPG  Mapping to Contract exists 
   cisco.aci.aci_epg_to_contract:
     <<: *aci_login
     tenant: "{{ item.0 }}"
@@ -159,7 +160,7 @@
   tags:
     - apic_config
 
-- name: Map Contracts and EPGs
+- name: Ensure EPG  Mapping to VMM exists 
   cisco.aci.aci_epg_to_domain:
     <<: *aci_login
     tenant: "{{ item.0 }}"
@@ -168,8 +169,10 @@
     domain: "{{ vmm_domain }}"
     vm_provider: vmware
     domain_type: vmm
+    resolution_immediacy: immediate
+    deploy_immediacy: immediate
     state: present
   with_items:
     - "{{ epgs }}"
   tags:
-    - apic_config2
+    - apic_config
