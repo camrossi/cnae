@@ -1,0 +1,101 @@
+- set_fact:
+    aci_login: &aci_login
+      hostname: "{{ inventory_hostname }}"
+      username: "{{ aci_temp_username }}"
+      private_key: "{{ './roles/aci/files/'+ aci_temp_username + '-user.key' }}"
+      certificate_name: "{{ aci_temp_username }}"
+      use_proxy: "no"
+      validate_certs: "{{ validate_certs }}"
+      port: "{{ port }}"
+
+- name: Delete old offline data sets
+  shell: rm -rf ./roles/demos/files/datasets/*.tar.gz
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+
+- name: Collect Wrong Contract Scope Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtWrongScope -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+
+- name: Fix Contract Scope
+  cisco.aci.aci_contract:
+    <<: *aci_login
+    tenant: common
+    contract: NP-PS_DB-P_PS_DB-contract
+    scope: global
+    state: present
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+
+- name: Add Overlapping Subnet
+  cisco.aci.aci_bd_subnet:
+    <<: *aci_login
+    tenant: nae-non-prod
+    bd: non-prod-db-bd
+    gateway: 10.65.0.1
+    mask: 24
+    state: present
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+
+- pause:
+    seconds: 30
+    prompt: "Waiting 30 seconds to make sure ACI Config is propagated"
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+    
+- name: Collect Correct Contract Scope overlapping subnet Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtCorrectScopeOverlappingSubnet -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir ./roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+
+- name: Fix Overlapping Subnet
+  cisco.aci.aci_bd_subnet:
+    <<: *aci_login
+    tenant: nae-non-prod
+    bd: non-prod-db-bd
+    gateway: 10.65.0.1
+    mask: 24
+    scope: [shared, public]
+    state: absent
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+
+- pause:
+    seconds: 30
+    prompt: "Waiting 30 seconds to make sure ACI Config is propagated"
+  tags:
+    - change_mgmt
+  when: "'nae' in group_names"
+
+- name: Collect Correct Contract Scope and Subnet
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtCorrect -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir ./roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+
+- name: Revert to Base config -  Break Contract Scope
+  cisco.aci.aci_contract:
+    <<: *aci_login
+    tenant: common
+    contract: NP-PS_DB-P_PS_DB-contract
+    scope: context
+    state: present
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+
+- pause:
+    seconds: 30
+    prompt: "Waiting 30 seconds to make sure ACI Config is propagated"
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"

@@ -158,7 +158,7 @@
   with_items:
     - "{{ epgToContract }}"
   tags:
-    - apic_config
+    - apic_config2
 
 - name: Ensure EPG  Mapping to VMM exists 
   cisco.aci.aci_epg_to_domain:

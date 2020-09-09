@@ -19,3 +19,14 @@ nae:
       admin_user: test2
       admin_pass: C@ndidadmin1234
       port: 443
+
+vcenter:
+  hosts:
+    10.67.185.112:
+      validate_certs: no
+      govc_url: "https://administrator@vsphere.local:123Cisco123!@vc2.cam.ciscolabs.com/sdk"
+      datacenter: STLD
+      data_store: BM01
+      port: 443
+      linked_clone_vm: Ubuntu18-LinkedClone
+      dvs_path: /STLD/network/ACI/

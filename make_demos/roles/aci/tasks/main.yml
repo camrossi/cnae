@@ -1,6 +1,5 @@
 - include: cleanup.yml
 - include: user.yml
 - include: aci-base-config.yml
-- include: change_management.yml
  
 #- include: cleanup.yml

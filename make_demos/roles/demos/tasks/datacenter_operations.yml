@@ -1,0 +1,35 @@
+- set_fact:
+    aci_login: &aci_login
+      hostname: "{{ inventory_hostname }}"
+      username: "{{ aci_temp_username }}"
+      private_key: "{{ './roles/aci/files/'+ aci_temp_username + '-user.key' }}"
+      certificate_name: "{{ aci_temp_username }}"
+      use_proxy: "no"
+      validate_certs: "{{ validate_certs }}"
+      port: "{{ port }}"
+
+- name: Collect Duplicate IP Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsDupIP -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - dcops
+  when: "'apic' in group_names"
+
+
+- name: Power Off VM with Duplicate IP 
+  shell: govc vm.power -off nae-vdi-10 
+  tags:
+    - dcops2
+  when: "'vcenter' in group_names"
+
+- pause:     
+    minutes: 5
+    prompt: "Waiting 5 minutes to ensure the duplicate IP Fault is cleared, feel free to jump ahead if you can manually check the Fault is gone in the APIC UI"
+  tags:
+    - change_mgmt
+  when: "'apic' in group_names"
+
+- name: Collect No Duplicate IP Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsNoDupIP -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - dcops
+  when: "'apic' in group_names"

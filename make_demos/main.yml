@@ -6,6 +6,28 @@
   roles:
     - role: aci
 
+- name: Create VMs
+  hosts: vcenter
+  gather_facts: no
+  connection: local
+  roles:
+    - role: vms 
+  environment:
+    GOVC_URL: "{{ govc_url }}"
+    GOVC_INSECURE: "true"
+    GOVC_DATASTORE: "{{ data_store }}"
+
+- name: Run Demo Scenarios
+  hosts: all
+  connection: local
+  gather_facts: no
+  roles:
+    - role: demos 
+  environment:
+    GOVC_URL: "{{ govc_url }}"
+    GOVC_INSECURE: "true"
+    GOVC_DATASTORE: "{{ data_store }}"
+
 - name: NAE Analysis
   hosts: nae
   gather_facts: no

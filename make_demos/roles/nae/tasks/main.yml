@@ -25,11 +25,11 @@
     name: "{{ item.split('/')[-1].split('_')[0] }}" 
     state: present
   with_fileglob:
-    - "roles/aci/files/datasets/*.tar.gz"
+    - "roles/demos/files/datasets/*.tar.gz"
   tags:
     - nae_config
 
-- name: Do Offline Analysis
+- name: Do Change Management Offline Analysis
   cisco.nae.nae_offline_analysis:
     <<: *nae_login
     state: present
@@ -38,10 +38,10 @@
     ag_name: "Change Management"
     filename: "{{ item.split('/')[-1].split('_')[0] }}"
   with_fileglob:
-    - "roles/aci/files/datasets/*.tar.gz"
+    - "roles/demos/files/datasets/*.tar.gz"
   tags:
     - nae_config
-
+  when: "'ChangeMgmt' in item" 
 
 - name: Delete AG
   cisco.nae.nae_ag:
@@ -61,6 +61,6 @@
     name: "{{ item.split('/')[-1].split('_')[0] }}" 
     state: absent
   with_fileglob:
-    - "roles/aci/files/datasets/*.tar.gz"
+    - "roles/demos/files/datasets/*.tar.gz"
   tags:
     - nae_wipe
