@@ -1,0 +1,16 @@
+---
+- name: Power Off VM
+  shell: govc vm.power -off nae-vdi-{{ item }}
+  tags:
+    - cleanup
+    - delete_vms
+  with_sequence: start=1 end=10
+  ignore_errors: yes
+
+- name: Delete VMs
+  shell: govc vm.destroy nae-vdi-{{ item }}
+  tags:
+    - cleanup
+    - delete_vms
+  with_sequence: start=1 end=10
+  ignore_errors: yes

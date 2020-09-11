@@ -7,6 +7,11 @@ vrfs:
   - ['nae-prod', 'prod-vrf']
   - ['nae-non-prod', 'non-prod-vrf']
   - ['nae-dmz','dmz-vrf']
+
+l3out: 
+# Tenatnt, l3outname, VRF, domain, extEPG, Network
+ - ['nae-dmz','l3out','dmz-vrf','L3OUT','external_clients','129.0.0.0/24']
+
 bds:
   - [nae-prod, prod-l2only-bd, prod-vrf,   10.72.0.1,24]
   - [nae-prod, prod-hadoop-management-bd, prod-vrf, 10.68.0.1,24]
@@ -870,6 +875,177 @@ subjectFilter:
       - [D-E-Web-contr,icmp]
       - [D-E-Web-contr,HTTPS]
       - [D-E-Web-contr,HTTP]
+
+  - name: NP-PL_web-PL_app-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-PL_web-PL_app-subject,JAVA_RPC]
+
+  - name: NP-VII_vda-EX_mail-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-EX_mail-subject,HTTPS]
+      - [NP-VII_vda-EX_mail-subject,SMTP_SSL]
+      - [NP-VII_vda-EX_mail-subject,RPC]
+      - [NP-VII_vda-EX_mail-subject,X.400]
+      - [NP-VII_vda-EX_mail-subject,ULS]
+
+  - name: NP-VII_vda-PL_app-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-PL_app-subject,RDP]
+      - [NP-VII_vda-PL_app-subject,SSH]
+      - [NP-VII_vda-PL_app-subject,JAVA_RPC]
+      - [NP-VII_vda-PL_app-subject,icmp]
+
+  - name: NP-VII_vda-PL_db-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-PL_db-subject,oracle_default]
+      - [NP-VII_vda-PL_db-subject,RDP]
+      - [NP-VII_vda-PL_db-subject,SSH]
+      - [NP-VII_vda-PL_db-subject,icmp]
+      - [NP-VII_vda-PL_db-subject,oracle_updated]
+      - [NP-VII_vda-PL_db-subject,oracle_secure]
+
+  - name: NP-PL_app-PL_db-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-PL_app-PL_db-subject,oracle_default]
+      - [NP-PL_app-PL_db-subject,oracle_updated]
+      - [NP-PL_app-PL_db-subject,oracle_secure]
+
+  - name: NP-VII_vda-HA_user-connectivity-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-HA_user-connectivity-subject,Hadoop_Filters]
+
+  - name: NP-VII_vda-PL_web-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-PL_web-subject,HTTPS]
+      - [NP-VII_vda-PL_web-subject,SSH]
+      - [NP-VII_vda-PL_web-subject,RDP]
+      - [NP-VII_vda-PL_web-subject,HTTP]
+
+  - name: NP-VII_vda-HA_hdfs-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-HA_hdfs-subject,Hadoop_Filters]
+
+  - name: NP-OR_app-OR_db-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-OR_app-OR_db-subject,oracle_default]
+      - [NP-OR_app-OR_db-subject,oracle_updated]
+      - [NP-OR_app-OR_db-subject,oracle_secure]
+
+  - name: NP-VII_vda-OR_app-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-OR_app-subject,SSH]
+      - [NP-VII_vda-OR_app-subject,RDP]
+      - [NP-VII_vda-OR_app-subject,JAVA_RPC]
+      - [NP-VII_vda-OR_app-subject,icmp]
+
+  - name: NP-E-administration-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-E-administration-subject,SSH]
+      - [NP-E-administration-subject,RDP]
+      - [NP-E-administration-subject,icmp]
+
+  - name: NP-VII_vda-HA_management-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-HA_management-subject,HTTPS]
+      - [NP-VII_vda-HA_management-subject,SSH]
+      - [NP-VII_vda-HA_management-subject,icmp]
+
+  - name: NP-E-all-intranet-subnets-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-E-all-intranet-subnets-subject,RDP]
+
+  - name: NP-PS_app-PS_db-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-PS_app-PS_db-subject,oracle_default]
+      - [NP-PS_app-PS_db-subject,oracle_updated]
+      - [NP-PS_app-PS_db-subject,oracle_secure]
+
+  - name: NP-VII_vda-PS_db-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-PS_db-subject,SSH]
+      - [NP-VII_vda-PS_db-subject,oracle_updated]
+      - [NP-VII_vda-PS_db-subject,oracle_secure]
+      - [NP-VII_vda-PS_db-subject,icmp]
+      - [NP-VII_vda-PS_db-subject,RDP]
+      - [NP-VII_vda-PS_db-subject,oracle_default]
+
+  - name: NP-PS_web-PS_app-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-PS_web-PS_app-subject,JAVA_RPC]
+
+  - name: NP-VII_vda-OR_db-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-OR_db-subject,RDP]
+      - [NP-VII_vda-OR_db-subject,SSH]
+      - [NP-VII_vda-OR_db-subject,oracle_default]
+      - [NP-VII_vda-OR_db-subject,icmp]
+      - [NP-VII_vda-OR_db-subject,oracle_updated]
+      - [NP-VII_vda-OR_db-subject,oracle_secure]
+
+  - name: NP-VII_vda-OR_web-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-OR_web-subject,HTTPS]
+      - [NP-VII_vda-OR_web-subject,SSH]
+      - [NP-VII_vda-OR_web-subject,HTTP]
+      - [NP-VII_vda-OR_web-subject,RDP]
+
+  - name: NP-VII_vda-PS_app-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-PS_app-subject,JAVA_RPC]
+      - [NP-VII_vda-PS_app-subject,SSH]
+      - [NP-VII_vda-PS_app-subject,RDP]
+      - [NP-VII_vda-PS_app-subject,icmp]
+
+  - name: NP-OR_web-OR_app-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-OR_web-OR_app-subject,JAVA_RPC]
+
+  - name: NP-VII_vda-PS_web-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-VII_vda-PS_web-subject,icmp]
+      - [NP-VII_vda-PS_web-subject,SSH]
+      - [NP-VII_vda-PS_web-subject,HTTPS]
+      - [NP-VII_vda-PS_web-subject,RDP]
+      - [NP-VII_vda-PS_web-subject,HTTP]
+
+  - name: NP-E-common-services-contract
+    tenant: nae-non-prod
+    subj:
+      - [NP-E-common-services-subject,LDAP-SSL]
+      - [NP-E-common-services-subject,Internal_DNS]
+      - [NP-E-common-services-subject,RPC]
+      - [NP-E-common-services-subject,NAT-T]
+      - [NP-E-common-services-subject,Cert_Based_Authentication]
+      - [NP-E-common-services-subject,IPSEC-ISAKMP]
+      - [NP-E-common-services-subject,SMB]
+      - [NP-E-common-services-subject,LDAP]
+      - [NP-E-common-services-subject,ADWS]
+      - [NP-E-common-services-subject,syslog]
+      - [NP-E-common-services-subject,DHCP]
+      - [NP-E-common-services-subject,Kerberos]
+      - [NP-E-common-services-subject,NTP]
+      - [NP-E-common-services-subject,icmp]
 
 epgToContract:
   - [nae-prod,hadoop-ap,hadoop-user-connectivity-epg,provider ,P-VII_vda-HA_user-connectivity-contract]

@@ -1,0 +1,310 @@
+{
+    "totalCount": "1",
+    "imdata": [
+        {
+            "l3extOut": {
+                "attributes": {
+                    "annotation": "",
+                    "descr": "",
+                    "dn": "uni/tn-nae-dmz/out-l3out",
+                    "enforceRtctrl": "export",
+                    "mplsEnabled": "no",
+                    "name": "l3out",
+                    "nameAlias": "",
+                    "ownerKey": "",
+                    "ownerTag": "",
+                    "targetDscp": "unspecified",
+                    "userdom": ":all:common:"
+                },
+                "children": [
+                    {
+                        "l3extRsL3DomAtt": {
+                            "attributes": {
+                                "annotation": "",
+                                "tDn": "uni/l3dom-L3OUT",
+                                "userdom": ":all:common:"
+                            }
+                        }
+                    },
+                    {
+                        "l3extRsEctx": {
+                            "attributes": {
+                                "annotation": "",
+                                "tnFvCtxName": "dmz-vrf",
+                                "userdom": "all"
+                            }
+                        }
+                    },
+                    {
+                        "l3extLNodeP": {
+                            "attributes": {
+                                "annotation": "",
+                                "configIssues": "",
+                                "descr": "",
+                                "name": "NodePFL",
+                                "nameAlias": "",
+                                "ownerKey": "",
+                                "ownerTag": "",
+                                "tag": "yellow-green",
+                                "targetDscp": "unspecified",
+                                "userdom": ":all:common:"
+                            },
+                            "children": [
+                                {
+                                    "l3extRsNodeL3OutAtt": {
+                                        "attributes": {
+                                            "annotation": "",
+                                            "configIssues": "",
+                                            "rtrId": "2.2.2.2",
+                                            "rtrIdLoopBack": "yes",
+                                            "tDn": "topology/pod-1/node-202",
+                                            "userdom": ":all:common:"
+                                        },
+                                        "children": [
+                                            {
+                                                "ipRouteP": {
+                                                    "attributes": {
+                                                        "aggregate": "no",
+                                                        "annotation": "",
+                                                        "descr": "",
+                                                        "fromPfxLen": "0",
+                                                        "ip": "0.0.0.0/0",
+                                                        "name": "",
+                                                        "nameAlias": "",
+                                                        "pref": "1",
+                                                        "rtCtrl": "",
+                                                        "toPfxLen": "0",
+                                                        "userdom": ":all:common:"
+                                                    },
+                                                    "children": [
+                                                        {
+                                                            "ipNexthopP": {
+                                                                "attributes": {
+                                                                    "annotation": "",
+                                                                    "descr": "",
+                                                                    "name": "",
+                                                                    "nameAlias": "",
+                                                                    "nhAddr": "192.168.4.3",
+                                                                    "pref": "unspecified",
+                                                                    "type": "prefix",
+                                                                    "userdom": ":all:common:"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "l3extLIfP": {
+                                        "attributes": {
+                                            "annotation": "",
+                                            "descr": "",
+                                            "name": "SVI",
+                                            "nameAlias": "",
+                                            "ownerKey": "",
+                                            "ownerTag": "",
+                                            "prio": "unspecified",
+                                            "tag": "yellow-green",
+                                            "userdom": ":all:common:"
+                                        },
+                                        "children": [
+                                            {
+                                                "l3extRsPathL3OutAtt": {
+                                                    "attributes": {
+                                                        "addr": "192.168.4.1/29",
+                                                        "annotation": "",
+                                                        "autostate": "disabled",
+                                                        "descr": "",
+                                                        "encap": "vlan-303",
+                                                        "encapScope": "local",
+                                                        "ifInstT": "ext-svi",
+                                                        "ipv6Dad": "enabled",
+                                                        "llAddr": "::",
+                                                        "mac": "00:22:BD:F8:19:FF",
+                                                        "mode": "regular",
+                                                        "mtu": "inherit",
+                                                        "tDn": "topology/pod-1/paths-202/pathep-[eth1/2]",
+                                                        "targetDscp": "unspecified",
+                                                        "userdom": ":all:common:"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "l3extRsNdIfPol": {
+                                                    "attributes": {
+                                                        "annotation": "",
+                                                        "tnNdIfPolName": "",
+                                                        "userdom": "all"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "l3extRsLIfPCustQosPol": {
+                                                    "attributes": {
+                                                        "annotation": "",
+                                                        "tnQosCustomPolName": "",
+                                                        "userdom": "all"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "l3extRsIngressQosDppPol": {
+                                                    "attributes": {
+                                                        "annotation": "",
+                                                        "tnQosDppPolName": "",
+                                                        "userdom": "all"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "l3extRsEgressQosDppPol": {
+                                                    "attributes": {
+                                                        "annotation": "",
+                                                        "tnQosDppPolName": "",
+                                                        "userdom": "all"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "l3extRsArpIfPol": {
+                                                    "attributes": {
+                                                        "annotation": "",
+                                                        "tnArpIfPolName": "",
+                                                        "userdom": "all"
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "l3extInstP": {
+                            "attributes": {
+                                "annotation": "",
+                                "descr": "",
+                                "exceptionTag": "",
+                                "floodOnEncap": "disabled",
+                                "matchT": "AtleastOne",
+                                "name": "external_cisco",
+                                "nameAlias": "",
+                                "prefGrMemb": "exclude",
+                                "prio": "unspecified",
+                                "targetDscp": "unspecified",
+                                "userdom": ":all:common:"
+                            },
+                            "children": [
+                                {
+                                    "l3extSubnet": {
+                                        "attributes": {
+                                            "aggregate": "",
+                                            "annotation": "",
+                                            "descr": "",
+                                            "ip": "10.131.0.0/16",
+                                            "name": "",
+                                            "nameAlias": "",
+                                            "scope": "import-security",
+                                            "userdom": ":all:common:"
+                                        }
+                                    }
+                                },
+                                {
+                                    "fvRsCustQosPol": {
+                                        "attributes": {
+                                            "annotation": "",
+                                            "tnQosCustomPolName": "",
+                                            "userdom": "all"
+                                        }
+                                    }
+                                },
+                                {
+                                    "fvRsCons": {
+                                        "attributes": {
+                                            "annotation": "",
+                                            "intent": "install",
+                                            "prio": "unspecified",
+                                            "tnVzBrCPName": "D-E-VDI-contract",
+                                            "userdom": ":all:common:"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "l3extInstP": {
+                            "attributes": {
+                                "annotation": "",
+                                "descr": "",
+                                "exceptionTag": "",
+                                "floodOnEncap": "disabled",
+                                "matchT": "AtleastOne",
+                                "name": "external_clients",
+                                "nameAlias": "",
+                                "prefGrMemb": "exclude",
+                                "prio": "unspecified",
+                                "targetDscp": "unspecified",
+                                "userdom": ":all:common:"
+                            },
+                            "children": [
+                                {
+                                    "l3extSubnet": {
+                                        "attributes": {
+                                            "aggregate": "",
+                                            "annotation": "",
+                                            "descr": "",
+                                            "ip": "192.168.4.0/24",
+                                            "name": "",
+                                            "nameAlias": "",
+                                            "scope": "import-security",
+                                            "userdom": ":all:common:"
+                                        }
+                                    }
+                                },
+                                {
+                                    "l3extSubnet": {
+                                        "attributes": {
+                                            "aggregate": "",
+                                            "annotation": "",
+                                            "descr": "",
+                                            "ip": "50.0.0.0/24",
+                                            "name": "",
+                                            "nameAlias": "",
+                                            "scope": "import-security",
+                                            "userdom": ":all:common:"
+                                        }
+                                    }
+                                },
+                                {
+                                    "fvRsCustQosPol": {
+                                        "attributes": {
+                                            "annotation": "",
+                                            "tnQosCustomPolName": "",
+                                            "userdom": "all"
+                                        }
+                                    }
+                                },
+                                {
+                                    "fvRsCons": {
+                                        "attributes": {
+                                            "annotation": "",
+                                            "intent": "install",
+                                            "prio": "unspecified",
+                                            "tnVzBrCPName": "D-E-VDI-contract",
+                                            "userdom": ":all:common:"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

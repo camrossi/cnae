@@ -43,6 +43,20 @@
     - nae_config
   when: "'ChangeMgmt' in item" 
 
+- name: Do Datacenter Operatiosn Offline Analysis
+  cisco.nae.nae_offline_analysis:
+    <<: *nae_login
+    state: present
+    complete: true
+    name: "{{ item.split('/')[-1].split('_')[0] }}"
+    ag_name: "Data Center Operations"
+    filename: "{{ item.split('/')[-1].split('_')[0] }}"
+  with_fileglob:
+    - "roles/demos/files/datasets/*.tar.gz"
+  tags:
+    - nae_config
+  when: "'DcOps' in item"
+
 - name: Delete AG
   cisco.nae.nae_ag:
     <<: *nae_login
@@ -51,7 +65,7 @@
   with_items:
     - "{{ ags }}"
   tags:
-    - nae_wipe
+    - nae_cleanup
 
 - name: Delete Files
   cisco.nae.nae_file_management:
@@ -63,4 +77,4 @@
   with_fileglob:
     - "roles/demos/files/datasets/*.tar.gz"
   tags:
-    - nae_wipe
+    - nae_cleanup

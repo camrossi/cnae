@@ -9,7 +9,7 @@
       port: "{{ port }}"
 
 - name: Delete old offline data sets
-  shell: rm -rf ./roles/demos/files/datasets/*.tar.gz
+  shell: rm -rf ./roles/demos/files/datasets/ChangeMgmt*.tar.gz
   tags:
     - change_mgmt
   when: "'apic' in group_names"

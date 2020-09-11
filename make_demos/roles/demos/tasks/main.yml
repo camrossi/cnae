@@ -1,8 +1,2 @@
-- name: Delete old offline data sets
-  shell: rm -rf ./roles/demos/files/datasets/*.tar.gz
-  tags:
-    - change_mgmt
-  when: "'apic' in group_names"
-
 - include: change_management.yml
 - include: datacenter_operations.yml 

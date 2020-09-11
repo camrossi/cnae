@@ -22,11 +22,7 @@
   connection: local
   gather_facts: no
   roles:
-    - role: demos 
-  environment:
-    GOVC_URL: "{{ govc_url }}"
-    GOVC_INSECURE: "true"
-    GOVC_DATASTORE: "{{ data_store }}"
+    - role: demos
 
 - name: NAE Analysis
   hosts: nae

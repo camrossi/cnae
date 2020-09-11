@@ -12,11 +12,14 @@ apic: #You ACI Fabric Name
       aci_temp_username: ansible2
       aci_temp_pass: ansible2
       vmm_domain: "ACI"
+      l3out_config:
+        - name: l3out
+          
 nae:
   hosts:
     192.168.66.64:
       validate_certs: no
-      admin_user: test2
+      admin_user: test
       admin_pass: C@ndidadmin1234
       port: 443
 
@@ -30,3 +33,5 @@ vcenter:
       port: 443
       linked_clone_vm: Ubuntu18-LinkedClone
       dvs_path: /STLD/network/ACI/
+      #For the DMZ use case we need a working L3OUT, we deploy 1 VM in here.
+      l3out_pg: /STLD/network/EX-Leaves/A1_L3OUT

@@ -158,7 +158,7 @@
   with_items:
     - "{{ epgToContract }}"
   tags:
-    - apic_config2
+    - apic_config
 
 - name: Ensure EPG  Mapping to VMM exists 
   cisco.aci.aci_epg_to_domain:
@@ -174,5 +174,14 @@
     state: present
   with_items:
     - "{{ epgs }}"
+  tags:
+    - apic_config
+
+- name: Ensure L3OUT Exists 
+  cisco.aci.aci_rest:
+    <<: *aci_login
+    method: post
+    path: /api/mo/uni.json
+    src: roles/aci/files/l3out.json
   tags:
     - apic_config

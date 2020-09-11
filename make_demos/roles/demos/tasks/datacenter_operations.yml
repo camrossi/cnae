@@ -8,6 +8,12 @@
       validate_certs: "{{ validate_certs }}"
       port: "{{ port }}"
 
+- name: Delete old offline data sets
+  shell: rm -rf ./roles/demos/files/datasets/DcOps*.tar.gz
+  tags:
+    - dcops
+  when: "'apic' in group_names"
+
 - name: Collect Duplicate IP Epoch
   script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsDupIP -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
   tags:
@@ -18,14 +24,18 @@
 - name: Power Off VM with Duplicate IP 
   shell: govc vm.power -off nae-vdi-10 
   tags:
-    - dcops2
+    - dcops
   when: "'vcenter' in group_names"
+  environment:
+    GOVC_URL: "{{ govc_url }}"
+    GOVC_INSECURE: "true"
+    GOVC_DATASTORE: "{{ data_store }}"
 
 - pause:     
     minutes: 5
     prompt: "Waiting 5 minutes to ensure the duplicate IP Fault is cleared, feel free to jump ahead if you can manually check the Fault is gone in the APIC UI"
   tags:
-    - change_mgmt
+    - dcops
   when: "'apic' in group_names"
 
 - name: Collect No Duplicate IP Epoch
@@ -33,3 +43,14 @@
   tags:
     - dcops
   when: "'apic' in group_names"
+
+- name: Break VDI DMZ
+  cisco.aci.aci_contract_subject_to_filter:
+    <<: *aci_login
+    tenant: nae-dmz
+    contract: D-E-VDI-contract
+    subject: D-E-VDI-subject
+    filter: RDP
+    state: absent
+  tags:
+    - dcops

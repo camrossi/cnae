@@ -1,7 +1,18 @@
-# Cisco Netowk Assurance Engine API
-Hello,
+# Generate and Analyse NAE Demo Data Sets
 
-This is my personal collection of scripts to manage CNAE thruoug its API. 
-As of CNAE Version 3.0 the API are in beta and can change at any time without notice. 
+This set ansible playbook will configure and ACI fabric and deploy VMs to allow the testing and generation of dataset for Cisco NAE
 
+## Tags
 
+Since this is a fairly large ansible playbook all the task are tagged with one or more tags to allow for partial executions, here are the currently supported tags:
+
+- apic_user: Create a new user and the certificates required for SSL based authentication.
+- apic_config: Push baseling ACI config to APIC.
+- vms: Deploy all the VMs and the external BGP router
+- delete_apic_user: Delete the created temporary user
+- cleanup: Delete ACI config, user and Destroys VMs, this will not clean up the NAE Config
+- change_mgmt: Generate the Change Management Data Set
+- dcops: Generate the Data Center Operations Data Set
+- delete_tenants: Delete the ACI Tenants but leaves in place everything else. Useful if you wanna experiment with the ACI side of the config and then restore it to a known state. 
+- delete_vms: Delete all the VMs, including the external BGP router
+- nae_cleanup: Delete NAE Assurance Groups and Uploaded Files
