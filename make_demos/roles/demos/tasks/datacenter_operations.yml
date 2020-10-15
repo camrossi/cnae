@@ -7,6 +7,25 @@
       use_proxy: "no"
       validate_certs: "{{ validate_certs }}"
       port: "{{ port }}"
+  when: "'apic' in group_names"
+
+- name: Delete NAE DcOps Uploaded Files
+  cisco.nae.nae_file_management:
+    host: "{{ inventory_hostname }}"
+    username: "{{ admin_user }}"
+    password: "{{ admin_pass }}"
+    validate_certs: "{{ validate_certs }}"
+    port: "{{ port }}"
+    file: "{{ item }}"
+    #Get the file name and remove the date i.e. a file name is somehting like this aci/files/datasets/ChangeMgmt2_2020-09-03_23_22_28.tar.gz
+    name: "{{ item.split('/')[-1].split('_')[0] }}" 
+    state: absent
+  ignore_errors: yes
+  with_fileglob:
+    - "roles/demos/files/datasets/DcOps*.tar.gz"
+  tags:
+    - dcops
+  when: "'nae' in group_names"
 
 - name: Delete old offline data sets
   shell: rm -rf ./roles/demos/files/datasets/DcOps*.tar.gz
@@ -19,7 +38,6 @@
   tags:
     - dcops
   when: "'apic' in group_names"
-
 
 - name: Power Off VM with Duplicate IP 
   shell: govc vm.power -off nae-vdi-10 
@@ -44,7 +62,7 @@
     - dcops
   when: "'apic' in group_names"
 
-- name: Break VDI DMZ
+- name: Break VDI DMZ Contract
   cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_login
     tenant: nae-dmz
@@ -54,3 +72,32 @@
     state: absent
   tags:
     - dcops
+  when: "'apic' in group_names"
+
+- name: Collect DMZ Congtract missing filter
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsNoFilter -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - dcops
+  when: "'apic' in group_names"
+
+- name: Revert VDI DMZ Contract 
+  cisco.aci.aci_contract_subject_to_filter:
+    <<: *aci_login
+    tenant: nae-dmz
+    contract: D-E-VDI-contract
+    subject: D-E-VDI-subject
+    filter: RDP
+    state: present
+  tags:
+    - dcops
+  when: "'apic' in group_names"
+
+- name: Power On VM with Duplicate IP 
+  shell: govc vm.power -on nae-vdi-10 
+  tags:
+    - dcops
+  when: "'vcenter' in group_names"
+  environment:
+    GOVC_URL: "{{ govc_url }}"
+    GOVC_INSECURE: "true"
+    GOVC_DATASTORE: "{{ data_store }}"

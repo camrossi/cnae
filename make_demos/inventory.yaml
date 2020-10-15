@@ -17,9 +17,9 @@ apic: #You ACI Fabric Name
           
 nae:
   hosts:
-    192.168.66.64:
+    192.168.66.67:
       validate_certs: no
-      admin_user: test
+      admin_user: admin
       admin_pass: C@ndidadmin1234
       port: 443
 

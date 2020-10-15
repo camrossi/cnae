@@ -29,20 +29,9 @@ Exaple:
     - [P-E-VII_vda-PS_web-subject,SSH]
     - [P-E-VII_vda-PS_web-subject,HTTPS]
 
-
-
 Map EPG to Contract
 cat LOGICAL_TENANTQf02HCP444 | jq -rj '.imdata[0].fvTenant.attributes.name as $tenant |  .imdata[0].fvTenant.children[] | select(.fvAp) | .fvAp.attributes.name as $app | (.[].children[]  | select(.fvAEPg) | .fvAEPg.attributes.name as $epg  | .fvAEPg.children[] | select(.fvRsProv) | "  - [" + $tenant + "," + $app+",", $epg+",", "provider ," , .fvRsProv.attributes.tnVzBrCPName + "]\n")'
 cat LOGICAL_TENANTQf02HCP444 | jq -rj '.imdata[0].fvTenant.attributes.name as $tenant |  .imdata[0].fvTenant.children[] | select(.fvAp) | .fvAp.attributes.name as $app | (.[].children[]  | select(.fvAEPg) | .fvAEPg.attributes.name as $epg  | .fvAEPg.children[] | select(.fvRsCons) | "  - [" + $tenant + "," + $app+",", $epg+",", "consumer ," , .fvRsCons.attributes.tnVzBrCPName + "]\n")'
-
-
-
-ansible-playbook -i inventory.yaml main.yml --tags="apic_config"  219.04s user 64.56s system 64% cpu 7:22.85 total
-
-
-
-
-
 
   - name: NP-PS_DB-P_PS_DB-contract
     tenant: common
@@ -58,3 +47,7 @@ subjectFilter:
 
 
         - [nae-non-prod,petstore-ap,petstore-db-tier-epg,provider ,NP-PS_DB-P_PS_DB-contract]
+
+
+ansible-playbook -i inventory.yaml main.yml --tags="apic_config"  274.81s user 37.99s system 83% cpu 6:15.73 total
+with Asycn 3 min 17

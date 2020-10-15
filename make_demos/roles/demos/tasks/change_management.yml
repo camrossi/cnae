@@ -7,6 +7,25 @@
       use_proxy: "no"
       validate_certs: "{{ validate_certs }}"
       port: "{{ port }}"
+  when: "'apic' in group_names"
+
+- name: Delete NAE ChangeMgmt Uploaded Files
+  cisco.nae.nae_file_management:
+    host: "{{ inventory_hostname }}"
+    username: "{{ admin_user }}"
+    password: "{{ admin_pass }}"
+    validate_certs: "{{ validate_certs }}"
+    port: "{{ port }}"
+    file: "{{ item }}"
+    #Get the file name and remove the date i.e. a file name is somehting like this aci/files/datasets/ChangeMgmt2_2020-09-03_23_22_28.tar.gz
+    name: "{{ item.split('/')[-1].split('_')[0] }}" 
+    state: absent
+  ignore_errors: yes
+  with_fileglob:
+    - "roles/demos/files/datasets/ChangeMgmt*.tar.gz"
+  tags:
+    - change_mgmt
+  when: "'nae' in group_names"
 
 - name: Delete old offline data sets
   shell: rm -rf ./roles/demos/files/datasets/ChangeMgmt*.tar.gz
@@ -38,6 +57,7 @@
     bd: non-prod-db-bd
     gateway: 10.65.0.1
     mask: 24
+    scope: [shared]
     state: present
   tags:
     - change_mgmt
@@ -50,7 +70,7 @@
     - change_mgmt
   when: "'apic' in group_names"
     
-- name: Collect Correct Contract Scope overlapping subnet Epoch
+- name: Collect Correct Contract Scope but overlapping subnet Epoch
   script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtCorrectScopeOverlappingSubnet -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir ./roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
   tags:
     - change_mgmt
@@ -63,7 +83,7 @@
     bd: non-prod-db-bd
     gateway: 10.65.0.1
     mask: 24
-    scope: [shared, public]
+    scope: [shared]
     state: absent
   tags:
     - change_mgmt

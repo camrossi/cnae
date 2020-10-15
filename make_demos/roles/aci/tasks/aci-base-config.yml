@@ -9,6 +9,7 @@
       validate_certs: "{{ validate_certs }}"
       port: "{{ port }}"
 
+#I am not paralelising this task on purpose to catch any user permission error.
 - name: Ensure NAE tenant exists
   cisco.aci.aci_tenant:
     <<: *aci_login
@@ -29,6 +30,8 @@
     - "{{ vrfs }}"
   tags:
     - apic_config
+  async: 10
+  poll: 0
 
 - name: Ensure BDs exists
   cisco.aci.aci_bd:
@@ -41,6 +44,9 @@
     - "{{ bds }}"
   tags:
     - apic_config
+  async: 10
+  poll: 0
+  register: _create_instances
 
 - name: Ensure BD Subnet exists
   cisco.aci.aci_bd_subnet:
@@ -55,7 +61,9 @@
     - "{{ bds }}"
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure App Profile Exists
   cisco.aci.aci_ap:
     <<: *aci_login
@@ -66,7 +74,9 @@
     - "{{ apps }}"
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure EPGs Exists
   cisco.aci.aci_epg:
     <<: *aci_login
@@ -79,7 +89,9 @@
     - "{{ epgs }}"
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure Filter Exists
   cisco.aci.aci_filter:
     <<: *aci_login
@@ -90,7 +102,9 @@
     - "{{ filters }}"
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure Filter Entries Exists
   cisco.aci.aci_filter_entry:
     <<: *aci_login
@@ -107,7 +121,9 @@
     - entries
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure Contract Exists
   cisco.aci.aci_contract:
     <<: *aci_login
@@ -118,7 +134,9 @@
     - "{{ contractToSubjects }}"
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure Contract Subject Exists
   cisco.aci.aci_contract_subject:
     <<: *aci_login
@@ -131,7 +149,9 @@
     - subj
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure Subject and Filter Mapping Exists
   cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_login
@@ -145,7 +165,9 @@
     - subj
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure EPG  Mapping to Contract exists 
   cisco.aci.aci_epg_to_contract:
     <<: *aci_login
@@ -159,7 +181,9 @@
     - "{{ epgToContract }}"
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure EPG  Mapping to VMM exists 
   cisco.aci.aci_epg_to_domain:
     <<: *aci_login
@@ -176,7 +200,9 @@
     - "{{ epgs }}"
   tags:
     - apic_config
-
+  async: 10
+  poll: 0
+  
 - name: Ensure L3OUT Exists 
   cisco.aci.aci_rest:
     <<: *aci_login
@@ -185,3 +211,6 @@
     src: roles/aci/files/l3out.json
   tags:
     - apic_config
+  async: 10
+  poll: 0
+

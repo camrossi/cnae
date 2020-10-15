@@ -14,17 +14,20 @@
     <<: *aci_login
     name: "{{ item }}"
     state: absent
+  ignore_errors: yes
   with_items:
     - "{{ tenants }}"
   tags:
     - delete_tenants
     - cleanup
+
 - name: Delete Contracts in Common
   cisco.aci.aci_contract:
     <<: *aci_login
     tenant: "{{ item.tenant }}"
     contract: "{{ item.name }}"
     state: absent
+  ignore_errors: yes
   with_items:
     - "{{ contractToSubjects }}"
   when:
@@ -32,12 +35,14 @@
   tags:
     - delete_common_contracts
     - cleanup
+
 - name: Delete Filter in Common 
   cisco.aci.aci_filter:
     <<: *aci_login
     tenant: "{{ item.tenant }}"
     filter: "{{ item.name }}"
     state: absent
+  ignore_errors: yes
   with_items:
     - "{{ filters }}"
   when:
@@ -45,6 +50,7 @@
   tags:
     - delete_common_contracts
     - cleanup
+
 - name: Delete temporary user
   cisco.aci.aci_aaa_user:
     host: "{{ inventory_hostname }}"
@@ -54,6 +60,7 @@
     aaa_password: "{{ aci_temp_pass }}"
     validate_certs: "{{ validate_certs }}"
     state: absent
+  ignore_errors: yes
   tags:
     - delete_apic_user
     - cleanup

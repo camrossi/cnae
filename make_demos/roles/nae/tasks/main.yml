@@ -29,6 +29,19 @@
   tags:
     - nae_config
 
+- name: Delete old Offline Analysis
+  cisco.nae.nae_offline_analysis:
+    <<: *nae_login
+    state: absent
+    complete: true
+    name: "{{ item.split('/')[-1].split('_')[0] }}"
+    filename: "{{ item.split('/')[-1].split('_')[0] }}"
+  with_fileglob:
+    - "roles/demos/files/datasets/*.tar.gz"
+  tags:
+    - nae_config
+  ignore_errors: yes
+
 - name: Do Change Management Offline Analysis
   cisco.nae.nae_offline_analysis:
     <<: *nae_login
@@ -64,17 +77,4 @@
     state: absent
   with_items:
     - "{{ ags }}"
-  tags:
-    - nae_cleanup
-
-- name: Delete Files
-  cisco.nae.nae_file_management:
-    <<: *nae_login
-    file: "{{ item }}"
-    #Get the file name and remove the date i.e. a file name is somehting like this aci/files/datasets/ChangeMgmt2_2020-09-03_23_22_28.tar.gz
-    name: "{{ item.split('/')[-1].split('_')[0] }}" 
-    state: absent
-  with_fileglob:
-    - "roles/demos/files/datasets/*.tar.gz"
-  tags:
-    - nae_cleanup
+  tags: [ never, nae_cleanup ]

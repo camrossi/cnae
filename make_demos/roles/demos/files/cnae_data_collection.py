@@ -53,6 +53,7 @@ import traceback
 import re
 import time
 from socket import gethostbyname
+from socket import gethostbyaddr
 import setuptools
 import zlib
 import importlib
@@ -77,7 +78,8 @@ SUPPORTED_ACI_VERSIONS = [
     '4.0',
     '4.1',
     '4.2',
-    '5.0'
+    '5.0',
+    '5.1'
 ]
 
 SUPPORTED_DCNM_VERSIONS = [
@@ -99,7 +101,8 @@ SUPPORTED_SWITCH_VERSIONS = [
     '14.0',
     '14.1',
     '14.2',
-    '15.0']
+    '15.0',
+    '15.1']
 
 SUPPORTED_NXFABRIC_SWITCH_VERSIONS = [
     '9.3']
@@ -107,6 +110,7 @@ SUPPORTED_NXFABRIC_SWITCH_VERSIONS = [
 NODE_TIMEOUT_STR = "Collection failure due to node timeout"
 COLLECTION_ABORTED_STR = "Collection has been aborted, skipping %s query : %s"
 REQUEST_PIPELINE_DEPTH = 1
+STANDALONE_REQUEST_PIPELINE_DEPTH = 2
 COOKIE_EXPIRED_STR = "Cookie expired"
 
 CONFIG_EXPORT_POLICY_FAILURE = "Config export job on apic cannot be configured"
@@ -144,6 +148,7 @@ NAE_APP_LOCAL_POD_ID = 0
 
 F5_ACCESS = "rest"
 MAX_WAIT_COUNT = 10
+SSH_TIMEOUT_SLEEP_TIME = 10
 
 def candidTimeIt(function):
     @wraps(function)
@@ -155,6 +160,18 @@ def candidTimeIt(function):
             (function.__name__, str(t1 - t0)))
         return result
     return functionTimer
+
+def safely_decode_str(str_val):
+    if isinstance(str_val, str):
+        return str_val
+    else:
+        return str_val.decode("utf-8")
+
+def safely_encode_str(str_val):
+    if isinstance(str_val, bytes):
+        return str_val
+    else:
+        return str_val.encode("utf-8")
 
 class CollectionConfigurationGenerator:
     def __init__(self, logger, args):
@@ -360,6 +377,34 @@ class NatTranslator:
         return phrase[:-1] + "]"
 
 
+class ExceptionUtils:
+
+    '''
+        log traceback (stack and exeption) at a certain log level
+    '''
+    @staticmethod
+    def createTraceback(stacktrace_stack_list):
+        '''
+        stacktrace_stack_list is a list of str, where each str contains 2 lines
+        split each str into 2 str, such that each str contains one line
+        '''
+
+        flattened_list_of_lines = ["= = = BEGINNING TRACEBACK = = =\n"] + stacktrace_stack_list
+        stacktrace_exc = traceback.format_exc()
+        if stacktrace_exc:
+            flattened_list_of_lines += ["--------------\n"] + [stacktrace_exc]
+        flattened_list_of_lines += ["= = = END OF TRACEBACK = = ="]
+        return ''.join(flattened_list_of_lines)
+
+    @staticmethod
+    def isTimeoutException(trace):
+        if "SSHException: Timeout opening channel." in trace:
+            return True
+        if "socket.timeout" in trace:
+            return True
+        return False
+
+
 class GlobalUtils:
 
     @staticmethod
@@ -382,7 +427,6 @@ class GlobalUtils:
         if not version_file_name:
             version_file_name = 'version.properties'
         try:
-            print(version_file_name)
             (candid_version, candid_ova_version) = (None, None)
             with open(version_file_dir + '/' + version_file_name, 'r') as f:
                 lines = f.readlines()
@@ -406,12 +450,12 @@ class GlobalUtils:
                 '/' +
                 version_file_name)
         except Exception as e:
-            logger.warning(
-                ("Unable to get version from version.properties.Reson::%s" %
-                 str(e)))
             traceback.print_stack()
             print('--------------')
             traceback.print_exc()
+            logger.warning(
+                ("Unable to get version from version.properties.Reson::%s" %
+                 str(e)))
         return version
 
     @staticmethod
@@ -2230,6 +2274,7 @@ class Node:
         self.node_pod_id = 0
         self.node_name = ""
         self.node_hostname = ""
+        self.node_dns_look_up_hostname = ""
         self.node_role = UNSUPPORTED
         self.node_version = ""
         self.node_fcs = None
@@ -2800,6 +2845,16 @@ class TopologyExplorer(object):
         else:
             return resolved_host
 
+    def getDnsLookupHostname(self, host_name):
+        try:
+            dns_lookup_host = gethostbyaddr(host_name)[0]
+        except BaseException as e:
+            self.logger.warning("Reverse DNS Lookup failed for host:"
+                                + str(host_name) + " Error :" + str(e))
+            return host_name
+        else:
+            return dns_lookup_host
+
     # Per APIC queries
     def getPodIdNodeId(self, ip):
         '''
@@ -2931,6 +2986,7 @@ class TopologyExplorer(object):
             node_id = None
             try:
                 each_apic = self.getResolvedHost(each_apic_host)
+                dns_lookedup_hostname = self.getDnsLookupHostname(each_apic_host)
                 self.logger.info(
                     "Topology discovery in progress for apic :%s" %
                     (each_apic))
@@ -2942,6 +2998,8 @@ class TopologyExplorer(object):
                         each_apic_host, "hostname", each_apic_host)
                     self.topology.updateTopoNode(
                         each_apic_host, "is_login", self.checkLogin(each_apic))
+                    self.topology.updateTopoNode(
+                        each_apic_host, "dns_look_up_hostname", dns_lookedup_hostname)
                     self.topology.updateTopoNode(
                         each_apic_host, "role", CONTROLLER)
                     self.topology.updateTopoNode(
@@ -2962,6 +3020,7 @@ class TopologyExplorer(object):
                     each_apic, "is_login", self.checkLogin(each_apic))
                 self.topology.updateTopoNode(each_apic, "role", CONTROLLER)
                 self.topology.updateTopoNode(each_apic, "is_configured", True)
+                self.topology.updateTopoNode(each_apic, "dns_look_up_hostname", dns_lookedup_hostname)
 
                 self.updateTopoNatConfiguration(
                     each_apic)  # adding nat configuration
@@ -3030,6 +3089,8 @@ class TopologyExplorer(object):
                     self.topology.updateTopoNode(
                         each_host, "hostname", each_host)
                     self.topology.updateTopoNode(
+                        each_host, "dn", each_host)
+                    self.topology.updateTopoNode(
                         each_host, "is_login", self.checkLogin(each_mso))
                     self.topology.updateTopoNode(
                         each_host, "role", MSO)
@@ -3051,6 +3112,8 @@ class TopologyExplorer(object):
                     each_mso, "id", node_id)
                 self.topology.updateTopoNode(
                     each_mso, "hostname", each_host)
+                self.topology.updateTopoNode(
+                    each_host, "dn", each_host)
                 self.topology.updateTopoNode(
                     each_mso, "is_login", self.checkLogin(each_mso))
                 self.topology.updateTopoNode(each_mso, "role", MSO)
@@ -3126,7 +3189,7 @@ class TopologyExplorer(object):
                     node_id = GlobalUtils.generateNodeId(node_name=serial_number,
                                                      node_ids=node_ids)
                     update_version = False
-                    if node_role in [LEAF, 'border']:
+                    if node_role in [LEAF, 'border', 'core router', 'aggregation', 'access']:
                         node_type = STANDALONE_LEAF
                         self.sa_topo_args._parseStandaloneNodes(
                             STANDALONE_LEAF, self.sa_topo_args.user, node_ip)
@@ -3404,6 +3467,9 @@ class TopologyExplorer(object):
             self.topology.updateTopoNode(node_ip, "inband_ip", node_inband_ip)
             if node_role == CONTROLLER:
                 self.topology.updateTopoNode(node_ip, "time", self.getApicTimeStamp())
+                if not existing_node_ip:
+                    self.topology.updateTopoNode(node_ip, "dns_look_up_hostname",
+                                                 self.getDnsLookupHostname(node_ip))
         else:
             if existing_node_ip == None:
                 self.topology.createMissingOobNode(node_ip, node_dn)
@@ -3485,17 +3551,23 @@ class TopologyExplorer(object):
             feature_list = []
 
             for ch in children:
-                self.logger.debug("childnow %s and keysnow %s" %(ch, ch.keys()))
-                feature_list.extend(ch.keys())
-                fea = ch[ch.keys()[0]]
+                ch_keys = []
+                for k in ch.keys():
+                    ch_keys.append(safely_decode_str(k))
+                self.logger.debug("childnow %s and keysnow %s" %(ch, ch_keys))
+                feature_list.extend(ch_keys)
+                fea = ch[ch_keys[0]]
                 self.logger.debug("featuredataobt %s " %(fea))
                 attribute = fea['attributes']
                 self.logger.debug("attribnow %s " %(attribute))
                 status = attribute['adminSt']
                 self.logger.debug("statusnow %s " %(status))
                 if(status == 'enabled') :
-                    enabled_features.append(ch.keys()[0])
+                    enabled_features.append(str(ch_keys[0]))
         except Exception as e:
+            traceback.print_stack()
+            print('--------------')
+            traceback.print_exc()
             self.logger.warning(
                 ("Unable to get Features set for node %s" %
                  str(e)))
@@ -4313,6 +4385,7 @@ class AsicType:
     SUGARBOWL = 4
     HOMEWOOD = 6
     HEAVENLY = 7
+    WOLFRIDGE = 8
     ACI_Model_Catalog = {
         'N9K-M12PQ': MILLER,
         'N9K-C9396PX': DONNER,
@@ -4334,8 +4407,18 @@ class AsicType:
         'N9K-C93108YC-FX': SUGARBOWL,
         'N9K-C93180YC-FX': HOMEWOOD,
         'N9K-C9348GC-FXP': HOMEWOOD,
+        'N9K-C9358GY-FXP': HOMEWOOD,
         'N9K-C9336C-FX': HEAVENLY,
         'N9K-C9336C-FX2': HEAVENLY,
+        'N9K-C93216TC-FX2': HEAVENLY,
+        'N9K-C93240YC-FX2': HEAVENLY,
+        'N9K-C93360YC-FX2': HEAVENLY,
+        'N9K-C9316D-GX': WOLFRIDGE,
+        'N9K-C93600CD-GX': WOLFRIDGE,
+        'N9K-C9364C-GX': WOLFRIDGE,
+        'N9K-X9716D-GX': WOLFRIDGE,
+        'N9K-C9504-FM-G': WOLFRIDGE,
+        'N9K-C9508-FM-G': WOLFRIDGE,
     }
 
     @staticmethod
@@ -4357,6 +4440,8 @@ class AsicType:
             return 'HOMEWOOD'
         elif asic_value == AsicType.HEAVENLY:
             return 'HEAVENLY'
+        elif asic_value == AsicType.WOLFRIDGE:
+            return 'WOLFRIDGE'
         elif asic_value == AsicType.UNKNOWN:
             return 'UNKNOWN_ASICMODELTYPE'
 
@@ -4507,6 +4592,7 @@ class QueryId:
     MSO_FABRIC_CONNECTIVITY_STATUS = 602
     MSO_SCHEMAS = 603
     MSO_TENANTS = 604
+    MSO_POLICY_REPORT = 605
 
     #NXOS DCNM related Queries
     NX_FABRIC_DCNM_INVENTORY = 10000
@@ -4552,6 +4638,11 @@ class QueryId:
     NX_FABRIC_BGP = 20035
     NX_FABRIC_GET_SUPPORTED_FEATURE = 20036
     NX_FABRIC_SHOW_RUN_CONFIG = 20037
+    NX_FABRIC_ISIS_INFO = 20038
+    NX_FABRIC_LOOPBACK_INTF = 20039
+    NX_FABRIC_VPC_CONSISTENCY_INTERFACE = 20040
+    NX_FABRIC_L3INST_V2 = 20041
+    NX_FABRIC_EVPN = 20042
 
 class QueryIdToString:
     @staticmethod
@@ -4740,6 +4831,7 @@ class GenericQueryResult:
         self.query_param_vrf_name = None
         self.query_param_vrf_count = None
         self.feature_set = None
+        self.query_string = None
 
     def setQuerySubType(self, query_sub_type):
         self.query_sub_type = query_sub_type
@@ -4898,6 +4990,12 @@ class GenericQueryResult:
 
     def getFeatureSet(self):
         return self.feature_set
+
+    def setQueryString(self, query_string):
+        self.query_string = query_string
+
+    def getQueryString(self):
+        return self.query_string
 
 
 def RestQuery(query_id, query_cmd=None, legacy_query=False,
@@ -5175,7 +5273,6 @@ class GenericCollector:
                             <configExportP name=$export_name snapshot="yes" format=$export_format includeSecureFields="no" adminSt="triggered">\
                                <configRsExportDestination tnFileRemotePathName="localhost" />\
                             </configExportP>\
-                            <fileRemotePath name="localhost"  remotePort="22" protocol= "scp" userName=$user userPasswd=$password host="localhost" remotePath="/home/$user/"/>\
                             </fabricInst>')
             remote_path = '/data2/snapshots/'
             export_policy_dn = Template('uni/fabric/configexp-$export_name')
@@ -5240,7 +5337,7 @@ class GenericCollector:
                 'vnsRsEPpInfoAtt,vnsRsLDevInst,vnsSvcCont,vnsSvcRedirectPol,vnsLDevCtx,vnsLIfCtx,' +\
                 'vnsRsLIfCtxToSvcRedirectPol,vnsRsNodeInstToLDevCtx,vnsRsTermToEPg,vnsRsTermToAny,' +\
                 'vnsRsConnToFltInst,vnsLDevVip,vnsLIf,vnsCDev,vnsCIf,vnsRsALDevToPhysDomP,vnsRsALDevToDomP,' +\
-                'vnsRsLDevCtxToLDev,vnsRsLIfCtxToBD,vnsRedirectDest,'
+                'vnsRsLDevCtxToLDev,vnsRsLIfCtxToBD,vnsRedirectDest,vnsRsLIfCtxToLIf,'
             addr_tree = 'fvnsAddrInst,fvnsRtAddrInst,fvnsUcastAddrBlk,'
             misc_tree = 'fvConnInstrPol,vzOOBBrCP,fvEpRetPol,pimExtP,rtctrlAttrP,rtctrlSubjP'
 
@@ -5612,6 +5709,9 @@ class GenericCollector:
             elif asic_type == AsicType.HEAVENLY:
                 # Keeping same as Homewood as Heavenly has similar commands
                 return cls.SwitchQueries.getHomewoodCmds()
+            elif asic_type == AsicType.WOLFRIDGE:
+                # Keeping same as Homewood as Heavenly has similar commands
+                return cls.SwitchQueries.getHomewoodCmds()
             else:
                 cls.logger.debug("AsicType not initalized")
             return []
@@ -5661,6 +5761,7 @@ class GenericCollector:
                 "vsh_lc -c 'show system internal aclqos zoning-rules'",
                 #                 "vsh_lc -c 'show system internal aclqos services redir'",
                 "vsh_lc -c 'show platform internal sug table tah_sug_lud_qosmaptable all'",
+                "vsh_lc -c 'show platform internal hal health-stats'",
             ]
 
             return sugarbowl_cmds
@@ -5690,6 +5791,57 @@ class GenericCollector:
                RestQuery(QueryId.MSO_TENANTS, '/api/v1/tenants')
            ]
            return queries
+
+        @staticmethod
+        def getQueryIds():
+            msoQueryIds = [x.getQueryId() for x in GenericCollector.MsoQueries.getQueries()]
+            # Below are dynamically created queries not present in getQueries.
+            msoQueryIds.append(QueryId.MSO_POLICY_REPORT)
+            return msoQueryIds
+
+        @staticmethod
+        def getMsoTenantList(cls, node):
+            cls.logger.info(
+                "Collecting MSO tenants information from node:%s ip:%s role:%s" %
+                (node.node_name, node.getNodeIp(), node.node_role))
+            mso_tenant_uri = "/api/v1/tenants"
+            tenant_list = []
+            rest_access = None
+
+            try:
+                mso_url = '%s://%s:%s' % (cls.protocol,
+                                          node.getNodeIp(), cls.port)
+
+                login_time_out , query_time_out, node_time_out  = cls.getNodeTimeOut(node)
+                session = MSOLoginSession(mso_url, cls.user, cls.password, timeout=node_time_out,
+                                          request_format='json')
+                rest_access = DirectRestAccess(session)
+                rest_access.login()
+
+                rsp_status_code, rsp_text = rest_access.getRawResponse(mso_url + mso_tenant_uri)
+                if rsp_status_code == requests.codes.ok:
+                    for tenant in json.loads(rsp_text)['tenants']:
+                        tenant_list.append(tenant['name'])
+                else:
+                    cls.logger.error("REST Error: %s" % rsp_status_code)
+            except Exception as e:
+                cls.logger.warning("MSO Tenant list lookup failed, Reason: %s" % str(e))
+            finally:
+                if rest_access is not None:
+                    try:
+                        rest_access.logout()
+                    except Exception as e:
+                        cls.logger.warning("logout failed due to: %s"%str(e))
+
+            return tenant_list
+
+        @staticmethod
+        def getMsoPolicyReportQuery(cls, node):
+            tenants = cls.MsoQueries.getMsoTenantList(cls, node)
+            tenants_str = ",".join(tenants)
+            mso_policy_report_uri = '/api/v1/policy-report?tenants=' + tenants_str
+
+            return RestQuery(QueryId.MSO_POLICY_REPORT, mso_policy_report_uri)
 
     class StandaloneQueries:
 
@@ -5738,7 +5890,7 @@ class GenericCollector:
                               standalone = True),
                     RestQuery(QueryId.NX_FABRIC_PIM, '/api/mo/sys/pim.json?query-target=subtree&rsp-subtree=children&rsp-subtree-class=pimAdjEp&target-subtree-class=pimIf',
                               standalone = True, features = "fmPim"),
-                    RestQuery(QueryId.NX_FABRIC_OSPF, '/api/mo/sys/ospf.json?query-target=subtree&rsp-subtree=children&rsp-subtree-class=ospfAdjEp&target-subtree-class=ospfRoute,ospfIf',
+                    RestQuery(QueryId.NX_FABRIC_OSPF, '/api/mo/sys/ospf.json?rsp-subtree=full&rsp-subtree-class=ospfAdjEp,ospfIf,ospfDom,ospfRoute',
                               standalone = True, features = "fmOspf"),
                     RestQuery(QueryId.NX_FABRIC_EPS, '/api/mo/sys/eps.json?rsp-subtree=full',
                               standalone = True),
@@ -5754,6 +5906,8 @@ class GenericCollector:
                               standalone=True, features = "fmPim"),
                     RestQuery(QueryId.NX_FABRIC_L3INST, '/api/mo/sys.json?rsp-subtree=full&rsp-subtree-class=l3Ctx,l3Inst,l2BD,vlanCktEp,'
                                                           'l2RsPathDomAtt&query-target=subtree&target-subtree-class=l3Ctx,l3Inst',
+                              standalone=True),
+                    RestQuery(QueryId.NX_FABRIC_L3INST_V2, '/api/mo/sys.json?rsp-subtree=full&rsp-subtree-class=l3Inst',
                               standalone=True),
                     SshQuery(QueryId.NX_FABRIC_PIM_INTERFACE, "show ip pim interface | json",
                               standalone=True, features = "fmPim"),
@@ -5771,10 +5925,13 @@ class GenericCollector:
                               standalone=True, features = "fmLldp"),
                     SshQuery(QueryId.NX_FABRIC_SHOW_IPV4_ROUTE, "show ip route vrf all", standalone=True),
                     SshQuery(QueryId.NX_FABRIC_SHOW_IPV6_ROUTE, "show ipv6 route vrf all", standalone=True),
-                    RestQuery(QueryId.NX_FABRIC_BGP, '/api/mo/sys/bgp.json?rsp-subtree=full',standalone=True),
+                    RestQuery(QueryId.NX_FABRIC_BGP, '/api/mo/sys/bgp.json?rsp-subtree=full',standalone=True, features = "fmBgp"),
                     SshQuery(QueryId.NX_FABRIC_SHOW_RUN_CONFIG, "show running-config expand-port-profile", standalone=True),
-
-
+                    RestQuery(QueryId.NX_FABRIC_ISIS_INFO, '/api/mo/sys/isis.json?query-target=subtree&rsp-subtree=children&target-subtree-class=isisIf',standalone=True, features = "fmIsis"),
+                    RestQuery(QueryId.NX_FABRIC_LOOPBACK_INTF, '/api/mo/sys/intf.json?query-target=subtree&target-subtree-class=l3LbRtdIf,ethpmLbRtdIf',
+                              standalone = True),
+                    RestQuery(QueryId.NX_FABRIC_EVPN, '/api/mo/sys/evpn.json?rsp-subtree=full',
+                              standalone = True)
                 ]
             elif node_role == STANDALONE_SPINE :
                 queries = [
@@ -5790,8 +5947,31 @@ class GenericCollector:
                               standalone = True),
                     RestQuery(QueryId.NX_FABRIC_PHY_INTERFACE, '/api/mo/sys/intf.json?query-target=subtree&target-subtree-class=l1PhysIf,ethpmPhysIf',
                               standalone = True),
-                    RestQuery(QueryId.NX_FABRIC_PC_INTERFACE, '/api/mo/sys/intf.json?query-target=subtree&target-subtree-class=pcAggrIf,ethpmAggrIf',
-                              standalone = True)
+                    RestQuery(QueryId.NX_FABRIC_PC_INTERFACE, '/api/mo/sys/intf.json?query-target=subtree&rsp-subtree=children&rsp-subtree-class=pcBndlMbrIf&target-subtree-class=pcAggrIf,ethpmAggrIf',
+                              standalone = True),
+                    RestQuery(QueryId.NX_FABRIC_VPC, '/api/mo/sys/vpc.json?rsp-subtree=full',
+                              standalone = True, features = "fmVpc"),
+                    RestQuery(QueryId.NX_FABRIC_STP, '/api/mo/sys/stp.json?query-target=subtree&target-subtree-class=stpIf',
+                              standalone = True),
+                    RestQuery(QueryId.NX_FABRIC_ISIS_INFO, '/api/mo/sys/isis.json?query-target=subtree&rsp-subtree=children&target-subtree-class=isisIf', standalone=True, features = "fmIsis"),
+                    SshQuery(QueryId.NX_FABRIC_ISIS_ADJACENCY, "show isis adjacency | json",
+                             standalone=True, features = "fmIsis"),
+                    RestQuery(QueryId.NX_FABRIC_LOOPBACK_INTF, '/api/mo/sys/intf.json?query-target=subtree&target-subtree-class=l3LbRtdIf,ethpmLbRtdIf',
+                              standalone = True),
+                    RestQuery(QueryId.NX_FABRIC_IPV4, '/api/mo/sys/ipv4.json?rsp-subtree=full&rsp-subtree-class=ipv4Dom,ipv4If,ipv4Addr',
+                              standalone = True),
+                    RestQuery(QueryId.NX_FABRIC_IPV6, '/api/mo/sys/ipv6.json?rsp-subtree=full&rsp-subtree-class=ipv6Dom,ipv6If,ipv6Addr',
+                              standalone = True),
+                    RestQuery(QueryId.NX_FABRIC_L3INST, '/api/mo/sys.json?rsp-subtree=full&rsp-subtree-class=l3Ctx,l3Inst,l2BD,vlanCktEp,'
+                                                        'l2RsPathDomAtt&query-target=subtree&target-subtree-class=l3Ctx,l3Inst',
+                              standalone=True),
+                    SshQuery(QueryId.NX_FABRIC_SHOW_IPV4_ROUTE, "show ip route vrf all", standalone=True),
+                    SshQuery(QueryId.NX_FABRIC_SHOW_IPV6_ROUTE, "show ipv6 route vrf all", standalone=True),
+                    RestQuery(QueryId.NX_FABRIC_L3INST_V2, '/api/mo/sys.json?rsp-subtree=full&rsp-subtree-class=l3Inst',
+                              standalone=True),
+                    RestQuery(QueryId.NX_FABRIC_OSPF, '/api/mo/sys/ospf.json?rsp-subtree=full&rsp-subtree-class=ospfAdjEp,ospfIf,ospfDom,ospfRoute',
+                              standalone = True, features = "fmOspf"),
+                    RestQuery(QueryId.NX_FABRIC_BGP, '/api/mo/sys/bgp.json?rsp-subtree=full',standalone=True, features = "fmBgp")
                 ]
             elif node_role == DCNM :
                 queries = [
@@ -5800,9 +5980,111 @@ class GenericCollector:
                     RestQuery(QueryId.NX_FABRIC_DCNM_VERSION, '/rest/dcnm-version',
                               standalone = True),
                     RestQuery(QueryId.NX_FABRIC_DCNM_LINKS, '/rest/control/links/fabrics/{0}'.format(sa_fabric),
-                              standalone = True),
-                ]
+                              standalone = True)]
             return queries
+
+        @staticmethod
+        def useDirectRest(cls, node, query):
+            if node.isLoginSuccess():
+                cls.logger.info("Retrieving %s from node:%s ip:%s port:%s role:%s"
+                                % (query.getQueryString(), node.node_name, node.getNodeIp(), node.getNodePort(), node.node_role))
+                rest_access = None
+                try:
+                    switch_url = '%s://%s:%s' % (cls.protocol, node.getNodeIp(), node.getNodePort())
+                    login_time_out , query_time_out, node_time_out  = cls.getNodeTimeOut(node)
+                    user_name = cls.user
+                    password = cls.password
+                    if cls.lan_username is not None and cls.lan_password is not None:
+                        user_name = cls.lan_username
+                        password = cls.lan_password
+                        cls.logger.debug("Using lan credentials provided for node:%s ip:%s role:%s"
+                                         % (node.node_name, node.getNodeIp(), node.node_role))
+                    if cls.leaf_list is not None and cls.leaf_list.get(node.getNodeIp()) is not None:
+                        user_name = cls.leaf_list.get(node.getNodeIp()).get("userName")
+                        password = cls.leaf_list.get(node.getNodeIp()).get("passWord")
+                        cls.logger.debug("Using leaf credentials provided for node:%s ip:%s role:%s"
+                                         % (node.node_name, node.getNodeIp(), node.node_role))
+                    session = LoginSession(switch_url,
+                                           user_name,
+                                           password,
+                                           timeout=(login_time_out, query_time_out),
+                                           request_format='json')
+                    rest_access = DirectRestAccess(session)
+                    rest_access.login()
+                    cls.queryRest(rest_access, node, query)
+                except Exception as e:
+                    cls.logger.error("Failed to retrieve %s from node:%s ip:%s role:%s, Reason: %s"
+                                     % (query.getQueryString(), node.node_name, node.getNodeIp(), node.node_role, str(e)))
+                finally:
+                    if rest_access is not None:
+                        try:
+                            rest_access.logout()
+                        except Exception as e:
+                            cls.logger.warning("Rest logout failed while retrieving %s, Reason: %s" % (query.getQueryString(), str(e)))
+
+        @staticmethod
+        def keyLookup(element, keyChain, default=None):
+            if element is not None:
+                current_level = element
+            else:
+                return default
+            for key in keyChain:
+                if key in current_level:
+                    current_level = current_level[key]
+                elif isinstance(current_level, list):
+                    if key < len(current_level):
+                        current_level = current_level[key]
+                else:
+                    return default
+            return current_level
+
+        @staticmethod
+        def getVpcInterfaceList(cls, node):
+            vpc_interface_list = []
+            try:
+                vpc_query_response = None
+                vpc_query = '/api/mo/sys/vpc.json?rsp-subtree=full'
+                query = RestQuery(QueryId.NX_FABRIC_VPC, vpc_query, standalone = True, features = "fmVpc")
+                query.setQueryString("vpc_interface_list")
+                cls.StandaloneQueries.useDirectRest(cls, node, query)
+                if query.query_response is not None:
+                    vpc_query_response = GlobalUtils.gzipDecompress(cls, query.query_response)
+                if vpc_query_response is not None:
+                    vpc_instance_chain = ['imdata', 0, 'vpcEntity', 'children', 0, 'vpcInst', 'children']
+                    vpc_instance_children = cls.StandaloneQueries.keyLookup(json.loads(vpc_query_response), vpc_instance_chain)
+                    vpc_domain_chain = ['vpcDom', 'children']
+                    vpc_domain_children = cls.StandaloneQueries.keyLookup(
+                        next((node for node in (vpc_instance_children or []) if 'vpcDom' in node), None), vpc_domain_chain)
+
+                    for entry in (vpc_domain_children or []):
+                        if 'vpcKeepalive' in entry:
+                            peer_link_chain = ['vpcKeepalive', 'children', 0, 'vpcPeerLink', 'attributes', 'id']
+                            peer_link_id = cls.StandaloneQueries.keyLookup(entry, peer_link_chain)
+                            if peer_link_id is not None:
+                                vpc_interface_list.append(peer_link_id.split("po")[1])
+                        elif 'vpcIf'in entry:
+                            vpc_leg_chain = ['vpcIf', 'children', 0, 'vpcRsVpcConf', 'attributes', 'tSKey']
+                            vpc_leg_id = cls.StandaloneQueries.keyLookup(entry, vpc_leg_chain)
+                            if vpc_leg_id is not None:
+                                vpc_interface_list.append(vpc_leg_id.split("po")[1])
+
+            except Exception as e:
+                cls.logger.error("Failed to parse vpc_interface_query from node:%s ip:%s role:%s, Reason: %s"
+                                 % (node.node_name, node.getNodeIp(), node.node_role, str(e)))
+            return vpc_interface_list
+
+        @staticmethod
+        def getVpcInterfaceConsistencyQueries(cls, node):
+            vpc_interface_consistency_queries = []
+            if node.isLoginSuccess():
+                # vpc_interface_list = vpc_legs + peer_link
+                vpc_interface_list = cls.StandaloneQueries.getVpcInterfaceList(cls, node)
+                for port_channel in vpc_interface_list:
+                    vpc_interface_consistency_query = 'show vpc consistency-parameters interface port-channel ' + port_channel + ' | json'
+                    vpc_interface_consistency_queries.append(SshQuery(QueryId.NX_FABRIC_VPC_CONSISTENCY_INTERFACE,
+                                                                      vpc_interface_consistency_query,
+                                                                      standalone=True))
+            return vpc_interface_consistency_queries
 
         @staticmethod
         def getVrfList(cls, node):
@@ -6338,7 +6620,10 @@ class GenericCollector:
                      node_collection_stats) for query in queries]
                 # for job in jobs:
                 #    self.collectNodeQueries(job)
-                p = ThreadPool(min(len(queries), REQUEST_PIPELINE_DEPTH))
+                if self.cnae_mode == _STANDALONE:
+                    p = ThreadPool(min(len(queries), STANDALONE_REQUEST_PIPELINE_DEPTH))
+                else:
+                    p = ThreadPool(min(len(queries), REQUEST_PIPELINE_DEPTH))
                 p.imap_unordered(self.collectNodeQueries, jobs)
                 p.close()
                 p.join()
@@ -6487,7 +6772,6 @@ class GenericCollector:
                         "NodeId: %d, Requests with paging invoked for url %s" %
                         (node.node_id, url))
                     query.setQueryTimeMillis(int(round(time.time() * 1000)))
-                    rest_access.reauth()
                     max_retries -= 1
                     (rsp_status_code,
                      rsp_text) = rest_access.getRawResponseWithPaging(base_url, url)
@@ -6500,7 +6784,7 @@ class GenericCollector:
                     query.setQueryResponseSize(len(rsp_text))
                     break
                 elif rsp_status_code == 403 and re.findall(r'Token timeout', rsp_text):
-                    rest_access.reauth()
+                    rest_access.reauthOrLogin(self.logger)
                     self.logger.warning(
                         "NodeId: %d Cookie expired, refreshing the cookie" %
                         (node.node_id))
@@ -6521,14 +6805,19 @@ class GenericCollector:
             except Exception as e:
                 # Catch queries missing in offline case, json parse errors
                 exception_str = str(e)
-                if max_retries == 1:
+                if max_retries > 1:
                     self.logger.warning(
                         "NodeId: %d May be due to timeout while running query : %s will retry"
                         "one more time and Error details are %s" %
                         (node.node_id, url, exception_str))
-                query.setQueryStatus(GenericQueryResult.QueryStatus.FAIL)
-                query.setQueryResponseSize(len(exception_str))
-                query.setQueryResponse(self.gzipCompress(exception_str))
+                else:
+                    self.logger.warning(
+                        "NodeId: %d Query Failed : %s "
+                        " and Error details are %s" %
+                        (node.node_id, url, exception_str))
+                    query.setQueryStatus(GenericQueryResult.QueryStatus.FAIL)
+                    query.setQueryResponseSize(len(exception_str))
+                    query.setQueryResponse(self.gzipCompress(exception_str))
             finally:
                 max_retries -= 1
 
@@ -6622,7 +6911,6 @@ class GenericCollector:
             print(query.getFeatureSet())
             return
 
-        self.logger.info("feature needed to execute Query is enabled query executing %s" %(query.getQueryCmd))
         max_retries = 2
         (bytes_stdout, bytes_stderr, status) = (None, None, None)
         ssh_cmd = query.getQueryCmdWithZip() if self.cnae_mode == _APIC \
@@ -6631,6 +6919,7 @@ class GenericCollector:
         ssh_exception = None
         query.setQueryStatus(GenericQueryResult.QueryStatus.FAIL)
         node_id = node.node_id
+        sleep_time = SSH_TIMEOUT_SLEEP_TIME
         while max_retries > 0:
             try:
                 self.logger.info(
@@ -6659,11 +6948,21 @@ class GenericCollector:
             except Exception as e:
                 max_retries -=1
                 ssh_exception = self.gzipCompress(str(e))
-                if max_retries == 1:
-                    message = "Query (%s) failed for node id: %d, will retry " \
-                                "%d more time(s) and Error details are %s"
-                    self.logger.warning(message%(query.getQueryCmd(), node_id,
-                                              max_retries, str(e)))
+                trace = ExceptionUtils.createTraceback(traceback.format_stack())
+                message = "Query (%s) failed for node id: %d, will retry " \
+                            "%d more time(s) and Error details are %s"
+                self.logger.warning(message%(query.getQueryCmd(), node_id,
+                                          max_retries, trace))
+                if ExceptionUtils.isTimeoutException(trace):
+                    # In case of timeout exception, we insert a sleep
+                    # before retry. Also, we double sleep time and query
+                    # timeout time for next query. This is to account for
+                    # a heavily loaded switch CPU to provide  it ample
+                    # recovery time.
+                    self.logger.info("sleeping for %d seconds"%sleep_time)
+                    time.sleep(sleep_time)
+                    sleep_time *= 2
+                    query_time_out *= 2
 
         # Length comparision is done on compressed stdout.
         # stdout is compressed, stderr is NOT compressed
@@ -6853,7 +7152,7 @@ class GenericCollector:
         with gzip.GzipFile(fileobj=out, mode="w", compresslevel=1) as f:
             for line in result.iter_content(chunk_size=10000):# 10 KB Chunks
                 count += len(line)
-                f.write(line.encode("utf-8"))
+                f.write(safely_encode_str(line))
         return (out.getvalue(), count)
 
     '''
@@ -6912,6 +7211,9 @@ class GenericCollector:
             if self.passesFilter(QueryId.NX_FABRIC_SHOW_IP_ARP_VRF) and node.node_role == STANDALONE_LEAF:
                 for vrf_query in self.StandaloneQueries.getPerVrfQueries(self, node):
                     queries.append(self.createQuery(node, vrf_query))
+            if self.passesFilter(QueryId.NX_FABRIC_VPC_CONSISTENCY_INTERFACE) and node.node_role == STANDALONE_LEAF:
+                for vpc_query in self.StandaloneQueries.getVpcInterfaceConsistencyQueries(self, node):
+                    queries.append(self.createQuery(node, vpc_query))
         elif node.node_role == DCNM:
             for query in self.StandaloneQueries.getQueries(node.node_role,
                                                            node.getSaFabric()):
@@ -6920,8 +7222,15 @@ class GenericCollector:
             node_mso_queries = []
             for query in self.MsoQueries.getQueries():
                 node_mso_queries.append(self.createQuery(node, query))
+
+            if self.passesFilter(QueryId.MSO_POLICY_REPORT):
+                mso_policy_report_query = self.MsoQueries.getMsoPolicyReportQuery(self, node)
+                if mso_policy_report_query is not None:
+                    node_mso_queries.append(self.createQuery(node, mso_policy_report_query))
+
             good_mso_nodes = [x for x in self.node_controller if x.isMso() and x.node_is_login is True]
             total_mso_count = len(good_mso_nodes)
+            good_mso_nodes.sort(key=lambda x:x.node_ip)
             if node in good_mso_nodes:
                 node_index = good_mso_nodes.index(node)
                 for k in range(0, len(node_mso_queries)):
@@ -7503,7 +7812,8 @@ def candidDataCollectionOffline(args, ccg=None):
             except Exception as e:
                 raise SystemExit("Please enter LAN password:" + str(e))
         leaf_list = {}
-        if ccg.get("cnaeMode") == _STANDALONE and ccg.get("leafCredentialOverwrite") > 0 :
+        leaf_cred_overwrite = ccg.get("leafCredentialOverwrite")
+        if leaf_cred_overwrite and leaf_cred_overwrite > 0:
             print("Enter IP address, User Name and Password for leaf switch to overwrite default credentials")
             for _ in range(ccg.get("leafCredentialOverwrite")):
                 leaf_ip = six.moves.input("IP Address: ")
@@ -7690,7 +8000,7 @@ def collectPerEpochData(ccg, password, output_dir, logger, iteration, lan_passwo
                     leaf_list=leaf_list)
                 collector.setFilterQueryIds(ccg.get("queryIds"))
                 collector.setExcludeQueryIds(
-                FilterQueryIds.getTopologyExplorerQueryIds() + FilterQueryIds.getConfigExportQueryIds() + FilterQueryIds.getSupportedFeaturesQueryIdList())
+                FilterQueryIds.getTopologyExplorerQueryIds() + FilterQueryIds.getConfigExportQueryIds() + FilterQueryIds.getSupportedFeaturesQueryIdList() + FilterQueryIds.getMsoTopologyQueryIdList())
                 collector.setTopoNodeList(node_list)
                 collector.setOptimizedQuery(ccg.get("optimizedQuery"))
                 legacy_mode = not ccg.get("noLegacyQuery")
@@ -8990,6 +9300,18 @@ class DirectRestAccess(object):
         """
         self._access_impl.logout()
 
+    def reauthOrLogin(self, logger=None):
+        """
+        This is needed to handle reauth failure in case session is expired
+        """
+        try:
+            self.reauth()
+        except Exception as e:
+            if logger:
+                logger.error("Reauth failed with exception: " + str(e) +
+                             " trying login instead.")
+            self.login()
+
     def reauth(self):
         """
         Re-authenticate this session with the current authentication cookie.
@@ -9102,7 +9424,9 @@ class DirectRestAccess(object):
             newurl = self.setPageParams(url, page_num, page_size)
             rsp_status_code, rsp_text = self.getRawResponse(newurl)
             if rsp_status_code != requests.codes.ok:
-                break
+                rsp_text = "paging query pg.%d failed with response: %s"%(
+                    page_num, rsp_text)
+                return (rsp_status_code, rsp_text)
             else:
                 json_doc = json.loads(rsp_text)
                 total_objects = len(json_doc['imdata'])
@@ -9524,7 +9848,6 @@ def addCommonArguments(parser):
         required=False)
     parser.add_argument('-versionProperties', type=str, required=False,
                         help='Specify path to version.properties file',
-                        dest='versionProperties',
                         default='version.properties')
     parser.add_argument(
         '-connectionPreferenceSecondary',
