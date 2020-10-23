@@ -9,60 +9,101 @@
       port: "{{ port }}"
   when: "'apic' in group_names"
 
-- name: Delete NAE DcOps Uploaded Files
-  cisco.nae.nae_file_management:
-    host: "{{ inventory_hostname }}"
-    username: "{{ admin_user }}"
-    password: "{{ admin_pass }}"
-    validate_certs: "{{ validate_certs }}"
-    port: "{{ port }}"
-    file: "{{ item }}"
-    #Get the file name and remove the date i.e. a file name is somehting like this aci/files/datasets/ChangeMgmt2_2020-09-03_23_22_28.tar.gz
-    name: "{{ item.split('/')[-1].split('_')[0] }}" 
-    state: absent
-  ignore_errors: yes
-  with_fileglob:
-    - "roles/demos/files/datasets/DcOps*.tar.gz"
-  tags:
-    - dcops
-  when: "'nae' in group_names"
-
-- name: Delete old offline data sets
+- name: DC Ops - Delete old offline data sets
   shell: rm -rf ./roles/demos/files/datasets/DcOps*.tar.gz
   tags:
     - dcops
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Collect Duplicate IP Epoch
-  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsDupIP -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+#The logic here is simplified. I wait for 1 Fault (imdata[0]) and I expect that fault to be the duplicate IP. This only works 
+#for this specific APIC config 
+- name: DC Ops - Wait for DUP IP Fault to be Present, if it fails check why the nae-vdi-10 VM is not generating a duplicate IP
+  cisco.aci.aci_rest:
+    <<: *aci_login
+    method: get
+    path: "/api/node/mo/uni/tn-nae-non-prod/ap-internal-vdi-ap/epg-internal-vdi-desktops-epg.json?query-target=self&rsp-subtree-include=faults,no-scoped,subtree"
+  register: fault
   tags:
     - dcops
+    - alldemos
+  when: "'apic' in group_names" 
+  until: "fault.imdata[0] is defined and 'F3083' in fault.imdata[0].faultInst.attributes.code and 'soaking' is match fault.imdata[0].faultInst.attributes.lc"
+  retries: 20
+  delay: 5
+
+- name: DC Ops - Collect Duplicate IP Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsDupIP -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets -apicConfigExportPolicyName "NAE_Export"  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - dcops
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Power Off VM with Duplicate IP 
-  shell: govc vm.power -off nae-vdi-10 
-  tags:
-    - dcops
-  when: "'vcenter' in group_names"
+- name: DC Ops - PowerOf VMs with Duplicate IP
+  shell: govc vm.power -off nae-vdi-{{ item }}
+  with_sequence: start=10 end=15
+  ignore_errors: yes
+  async: 10
+  poll: 0
   environment:
     GOVC_URL: "{{ govc_url }}"
     GOVC_INSECURE: "true"
     GOVC_DATASTORE: "{{ data_store }}"
+  tags:
+    - dcops
+    - alldemos
+  when: "'vcenter' in group_names"
+
+- name: DC Ops - Flap the BD to clear the IPs l2_unknown_unicast --> flood
+  cisco.aci.aci_bd:
+    <<: *aci_login
+    tenant: nae-non-prod
+    bd: non-prod-internal-vdi-bd
+    vrf: non-prod-vrf
+    l2_unknown_unicast: flood
+    state: present
+  tags:
+    - dcops
+    - alldemos
+  when: "'apic' in group_names"
 
 - pause:     
-    minutes: 5
-    prompt: "Waiting 5 minutes to ensure the duplicate IP Fault is cleared, feel free to jump ahead if you can manually check the Fault is gone in the APIC UI"
+    seconds: 15
+    prompt: "Waiting 15 sec to ensure all the IPs are flushed"
   tags:
     - dcops
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Collect No Duplicate IP Epoch
-  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsNoDupIP -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+- name: DC Ops - Restore BD l2_unknown_unicast --> Proxy
+  cisco.aci.aci_bd:
+    <<: *aci_login
+    tenant: nae-non-prod
+    bd: non-prod-internal-vdi-bd
+    vrf: non-prod-vrf
+    state: present
+    l2_unknown_unicast: proxy
   tags:
     - dcops
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Break VDI DMZ Contract
+- pause:     
+    seconds: 15
+    prompt: "Waiting 15 sec to ensure all the IPs are re-learned"
+  tags:
+    - dcops
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: DC Ops - Collect No Duplicate IP Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsNoDupIP -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets -apicConfigExportPolicyName "NAE_Export"  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - dcops
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: DC Ops - Break VDI DMZ Contract
   cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_login
     tenant: nae-dmz
@@ -72,15 +113,17 @@
     state: absent
   tags:
     - dcops
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Collect DMZ Congtract missing filter
-  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsNoFilter -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+- name: DC Ops - Collect DMZ Congtract missing filter
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName DcOpsNoFilter -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets -apicConfigExportPolicyName "NAE_Export"  -iterations 1 -APIC "{{ inventory_hostname }}" 
   tags:
     - dcops
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Revert VDI DMZ Contract 
+- name: DC Ops - DC Ops Revert VDI DMZ Contract 
   cisco.aci.aci_contract_subject_to_filter:
     <<: *aci_login
     tenant: nae-dmz
@@ -90,14 +133,20 @@
     state: present
   tags:
     - dcops
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Power On VM with Duplicate IP 
-  shell: govc vm.power -on nae-vdi-10 
-  tags:
-    - dcops
-  when: "'vcenter' in group_names"
+- name: DC Ops - Power On VM with Duplicate IP 
+  shell: govc vm.power -on nae-vdi-{{ item }}
+  with_sequence: start=10 end=15
+  ignore_errors: yes
+  async: 10
+  poll: 0
   environment:
     GOVC_URL: "{{ govc_url }}"
     GOVC_INSECURE: "true"
-    GOVC_DATASTORE: "{{ data_store }}"
+    GOVC_DATASTORE: "{{ data_store }}"  
+  tags:
+    - dcops
+    - alldemos
+  when: "'vcenter' in group_names"

@@ -579,7 +579,13 @@ class NAE:
             self.logger.info("Requested Page size %d. Actual Page Size %d", objPerPage, actual_page_size)
         self.logger.info("Pages extracted %d", page)
         return tcam_data
-
+    def nae_rest(self, api_ep, payload):
+        url = 'https://'+self.ip_addr+ api_ep
+        print(url)
+        print(payload)
+        response = requests.post(url, data=payload, headers=self.http_headers,cookies=self.session_cookie, verify=False)
+        return response.json()
+    
     def wipe(self, keep_offline_files):
         #Delete all Assurance Groups
         self.getAllAG()

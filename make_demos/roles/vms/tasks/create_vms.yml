@@ -1,17 +1,8 @@
 ---
-- name: install govc locally
-  shell: "curl -L https://github.com/vmware/govmomi/releases/download/v0.23.0/govc_linux_amd64.gz | gunzip > roles/vms/files/govc "
-  tags:
-    - install_govc
-
-- name: ensure govc is executable
-  shell: chmod +x roles/vms/files/govc
-  tags:
-    - install_govc
 
 - name: Clone VM
   shell: govc vm.clone -vm "{{ linked_clone_vm }}" -snapshot  $(govc snapshot.tree -vm  "{{ linked_clone_vm }}"  -C ) -on=false -link=true nae-vdi-{{ item }}
-  with_sequence: start=1 end=10
+  with_sequence: start=1 end=15
   ignore_errors: yes
   async: 10
   poll: 0
@@ -31,7 +22,7 @@
     
 - name: Configure VM Port Group
   shell: govc vm.network.change -vm nae-vdi-{{ item }} -net "{{ dvs_path }}nae-non-prod|internal-vdi-ap|internal-vdi-desktops-epg" ethernet-0
-  with_sequence: start=1 end=10
+  with_sequence: start=1 end=15
   ignore_errors: yes
   async: 10
   poll: 0
@@ -47,15 +38,20 @@
   tags:
     - vms
 
-- name: Configure VM with Duplicate IP
-  shell: govc vm.customize -vm nae-vdi-10 -name VM-10 -gateway 10.18.0.1 -ip 10.18.0.26 -netmask 255.255.255.0 -dns-server 8.8.8.8
+- name: Configure VMs with Duplicate IPs
+  shell: govc vm.customize -vm nae-vdi-{{ item }} -name VM-{{ item }} -gateway 10.18.0.1 -ip 10.18.0.2{{ count }} -netmask 255.255.255.0 -dns-server 8.8.8.8
+  with_sequence: start=10 end=15
+  loop_control:
+    index_var: count
   ignore_errors: yes
+  async: 10
+  poll: 0
   tags:
     - vms
 
 - name: PowerOn VM
   shell: govc vm.power -on nae-vdi-{{ item }}
-  with_sequence: start=1 end=10
+  with_sequence: start=1 end=15
   ignore_errors: yes
   async: 10
   poll: 0
@@ -110,7 +106,7 @@
 
 - name: Wait for all VMs IP
   shell: govc vm.ip nae-vdi-{{ item }}
-  with_sequence: start=1 end=10
+  with_sequence: start=1 end=15
   tags:
     - vms
 

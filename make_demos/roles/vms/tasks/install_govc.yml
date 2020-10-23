@@ -1,0 +1,13 @@
+---
+#Ideally I would use the unarchive module but it does not support .gz files so curl it is 
+- name: install govc locally
+  shell: "curl -L {{ govc_package }} | gunzip > roles/vms/files/govc "
+  tags:
+    - install_govc
+
+- name: ensure govc is executable
+  file:
+    path: roles/vms/files/govc
+    mode: u+x
+  tags:
+    - install_govc

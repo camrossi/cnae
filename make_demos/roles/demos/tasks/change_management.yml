@@ -9,37 +9,21 @@
       port: "{{ port }}"
   when: "'apic' in group_names"
 
-- name: Delete NAE ChangeMgmt Uploaded Files
-  cisco.nae.nae_file_management:
-    host: "{{ inventory_hostname }}"
-    username: "{{ admin_user }}"
-    password: "{{ admin_pass }}"
-    validate_certs: "{{ validate_certs }}"
-    port: "{{ port }}"
-    file: "{{ item }}"
-    #Get the file name and remove the date i.e. a file name is somehting like this aci/files/datasets/ChangeMgmt2_2020-09-03_23_22_28.tar.gz
-    name: "{{ item.split('/')[-1].split('_')[0] }}" 
-    state: absent
-  ignore_errors: yes
-  with_fileglob:
-    - "roles/demos/files/datasets/ChangeMgmt*.tar.gz"
-  tags:
-    - change_mgmt
-  when: "'nae' in group_names"
-
-- name: Delete old offline data sets
+- name: Change Management - Delete old offline data sets
   shell: rm -rf ./roles/demos/files/datasets/ChangeMgmt*.tar.gz
   tags:
     - change_mgmt
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Collect Wrong Contract Scope Epoch
-  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtWrongScope -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+- name: Change Management - Collect Wrong Contract Scope Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtWrongScope -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets  -iterations 1 -apicConfigExportPolicyName "NAE_Export" -APIC "{{ inventory_hostname }}" 
   tags:
     - change_mgmt
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Fix Contract Scope
+- name: Change Management - Fix Contract Scope
   cisco.aci.aci_contract:
     <<: *aci_login
     tenant: common
@@ -48,9 +32,10 @@
     state: present
   tags:
     - change_mgmt
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Add Overlapping Subnet
+- name: Change Management - Add Overlapping Subnet
   cisco.aci.aci_bd_subnet:
     <<: *aci_login
     tenant: nae-non-prod
@@ -61,6 +46,7 @@
     state: present
   tags:
     - change_mgmt
+    - alldemos
   when: "'apic' in group_names"
 
 - pause:
@@ -68,15 +54,17 @@
     prompt: "Waiting 30 seconds to make sure ACI Config is propagated"
   tags:
     - change_mgmt
+    - alldemos
   when: "'apic' in group_names"
     
-- name: Collect Correct Contract Scope but overlapping subnet Epoch
-  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtCorrectScopeOverlappingSubnet -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir ./roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+- name: Change Management - Collect Correct Contract Scope but overlapping subnet Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtCorrectScopeOverlappingSubnet -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir ./roles/demos/files/datasets -apicConfigExportPolicyName "NAE_Export"  -iterations 1 -APIC "{{ inventory_hostname }}" 
   tags:
     - change_mgmt
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Fix Overlapping Subnet
+- name: Change Management - Fix Overlapping Subnet
   cisco.aci.aci_bd_subnet:
     <<: *aci_login
     tenant: nae-non-prod
@@ -87,6 +75,7 @@
     state: absent
   tags:
     - change_mgmt
+    - alldemos
   when: "'apic' in group_names"
 
 - pause:
@@ -94,15 +83,17 @@
     prompt: "Waiting 30 seconds to make sure ACI Config is propagated"
   tags:
     - change_mgmt
+    - alldemos
   when: "'nae' in group_names"
 
-- name: Collect Correct Contract Scope and Subnet
-  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtCorrect -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir ./roles/demos/files/datasets  -iterations 1 -APIC "{{ inventory_hostname }}" 
+- name: Change Management - Collect Correct Contract Scope and Subnet
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtCorrect -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir ./roles/demos/files/datasets -apicConfigExportPolicyName "NAE_Export"  -iterations 1 -APIC "{{ inventory_hostname }}" 
   tags:
     - change_mgmt
+    - alldemos
   when: "'apic' in group_names"
 
-- name: Revert to Base config -  Break Contract Scope
+- name: Change Management - Revert to Base config -  Break Contract Scope
   cisco.aci.aci_contract:
     <<: *aci_login
     tenant: common
@@ -111,6 +102,34 @@
     state: present
   tags:
     - change_mgmt
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: Change Management - Add NP-E-administration-contract as consumed to payroll-web-tier-epg
+  cisco.aci.aci_epg_to_contract:
+    <<: *aci_login
+    tenant: nae-non-prod
+    ap: payroll-ap
+    epg: payroll-web-tier-epg
+    contract: NP-E-administration-contract
+    contract_type: consumer
+    state: present
+  tags:
+    - change_mgmt
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: Change Management - Set non-prod-internal-vdi-bd to flood
+  cisco.aci.aci_bd:
+    <<: *aci_login
+    tenant: nae-non-prod
+    bd: non-prod-internal-vdi-bd
+    vrf: non-prod-vrf
+    l2_unknown_unicast: flood
+    state: present
+  tags:
+    - change_mgmt
+    - alldemos
   when: "'apic' in group_names"
 
 - pause:
@@ -118,4 +137,39 @@
     prompt: "Waiting 30 seconds to make sure ACI Config is propagated"
   tags:
     - change_mgmt
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: Change Management - Collect Compliance Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName ChangeMgmtSegmentationCompliance -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir ./roles/demos/files/datasets -apicConfigExportPolicyName "NAE_Export"  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - change_mgmt
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: Change Management - Remove NP-E-administration-contract as consumed to payroll-web-tier-epg
+  cisco.aci.aci_epg_to_contract:
+    <<: *aci_login
+    tenant: nae-non-prod
+    ap: payroll-ap
+    epg: payroll-web-tier-epg
+    contract: NP-E-administration-contract
+    contract_type: consumer
+    state: absent
+  tags:
+    - change_mgmt
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: Change Management - Restore BD to Proxy
+  cisco.aci.aci_bd:
+    <<: *aci_login
+    tenant: nae-non-prod
+    bd: non-prod-internal-vdi-bd
+    vrf: non-prod-vrf
+    state: present
+    l2_unknown_unicast: proxy
+  tags:
+    - change_mgmt
+    - alldemos
   when: "'apic' in group_names"

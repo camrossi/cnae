@@ -46,7 +46,6 @@
     - apic_config
   async: 10
   poll: 0
-  register: _create_instances
 
 - name: Ensure BD Subnet exists
   cisco.aci.aci_bd_subnet:
@@ -214,3 +213,12 @@
   async: 10
   poll: 0
 
+- name: Add vzAny to non-prod tenant
+  cisco.aci.aci_rest:
+    <<: *aci_login
+    method: post
+    path: /api/mo/uni.json
+    src: roles/aci/files/vzany_non_prod_enable.json
+  tags:
+    - apic_config
+    - abc

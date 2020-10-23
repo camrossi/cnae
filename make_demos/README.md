@@ -17,3 +17,8 @@ Since this is a fairly large ansible playbook all the task are tagged with one o
 - delete_tenants: Delete the ACI Tenants but leaves in place everything else. Useful if you wanna experiment with the ACI side of the config and then restore it to a known state. 
 - delete_vms: Delete all the VMs, including the external BGP router
 - nae_cleanup: Delete NAE Assurance Groups and Uploaded Files
+
+### Typical playbook runs
+
+- Deletes everything, reconfigure and collect data: no tags
+- Rerun all demo scenarios without wiping APIC and VMs: "alldemos"

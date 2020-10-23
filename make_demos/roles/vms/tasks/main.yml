@@ -1,2 +1,3 @@
+- include: install_govc.yml
 - include: cleanup_vms.yml
 - include: create_vms.yml

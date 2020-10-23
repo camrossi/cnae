@@ -1,8 +1,118 @@
 ags:
   - Change Management
-  - Config Compliance
   - Data Center Operations
   - Epoch Analysis
-  - Migration
+  - Migrations
   - Pre Change Verification
-  - Segmentation Compliance
+
+pcv_changes: 
+    [
+      { "fvBD": {
+        "attributes": {
+          "OptimizeWanBandwidth": "no",
+          "arpFlood": "no",
+          "descr": "",
+          "epClear": "no",
+          "hostBasedRouting": "no",
+          "intersiteBumTrafficAllow": "no",
+          "intersiteL2Stretch": "no",
+          "ipLearning": "yes",
+          "limitIpLearnToSubnets": "yes",
+          "llAddr": "",
+          "mac": "00:22:BD:F8:19:FF",
+          "mcastAllow": "no",
+          "multiDstPktAct": "bd-flood",
+          "nameAlias": "",
+          "type": "regular",
+          "unicastRoute": "yes",
+          "unkMacUcastAct": "proxy",
+          "unkMcastAct": "flood",
+          "v6unkMcastAct": "flood",
+          "vmac": "not-applicable",
+          "dn": "uni/tn-nae-prod/BD-prod-jenkins-bd",
+          "name": "prod-jenkins-bd",
+          "pcv_status": "created"
+        },
+        "children": [
+          {
+            "fvRsCtx": {
+              "attributes": {
+                "tnFvCtxName": "prod-vrf",
+                "pcv_status": "created"
+              }
+            }
+          }
+        ]
+      }
+      },
+      { "fvSubnet": {
+        "attributes": {
+          "ctrl": "nd",
+          "descr": "",
+          "name": "",
+          "nameAlias": "",
+          "preferred": "no",
+          "scope": "private",
+          "virtual": "no",
+          "dn": "uni/tn-nae-prod/BD-prod-jenkins-bd/subnet-10.66.0.1/24",
+          "ip": "10.66.0.1/24",
+          "pcv_status": "created"
+        },
+        "children": []
+        }
+      },
+      { "fvAEPg": {
+        "attributes": {
+            "floodOnEncap": "disabled",
+            "hasMcastSource": "no",
+            "isAttrBasedEPg": "no",
+            "matchT": "AtleastOne",
+            "pcEnfPref": "unenforced",
+            "prefGrMemb": "exclude",
+            "prio": "unspecified",
+            "shutdown": "no",
+            "userdom": ":all:common:",
+            "dn": "uni/tn-nae-non-prod/ap-payroll-ap/epg-payroll-web-tier-epg",
+            "name": "payroll-web-tier-epg",
+            "pcv_status": "modified"
+          }, "children": [
+                              {
+                                  "fvRsBd": {
+                                      "attributes": {
+                                          "tnFvBDName": "non-prod-web-bd"
+                                      }
+                                  }
+                              },
+                              {
+                                  "fvRsProv": {
+                                      "attributes": {
+                                          "tnVzBrCPName": "NP-VII_vda-PL_web-contract"
+                                      }
+                                  }
+                              },
+                              {
+                                  "fvRsCons": {
+                                      "attributes": {
+                                          "tnVzBrCPName": "NP-PL_web-PL_app-contract"
+                                      }
+                                  }
+                              },
+                              {
+                                  "fvRsCons": {
+                                      "attributes": {
+                                          "tnVzBrCPName": "NP-E-administration-contract",
+                                          "pcv_status": "deleted"
+                                      }
+                                  }
+                              },
+                              {
+                                  "fvRsCons": {
+                                      "attributes": {
+                                          "tnVzBrCPName": "NP-E-common-services-contract"
+                                      }
+                                  }
+                              }
+            ]
+          }
+      }
+    ]

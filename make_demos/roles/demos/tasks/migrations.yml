@@ -1,0 +1,19 @@
+#Migrations for now is the same file as DcOpsNoDupIP, to ensure it is easy to expand later I just copy the file so the NAE workflow does not change
+- name: Migrations - Delete old offline data sets
+  shell: rm -rf ./roles/demos/files/datasets/Migrations*.tar.gz
+  tags:
+    - migrations
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: Migrations - Copy DcOpsNoDupIP to Migrations
+  copy:
+    src: "{{ item }}"
+    dest: ./roles/demos/files/datasets/Migrations1_.tar.gz
+  when: "'apic' in group_names"
+  with_fileglob:
+    - "roles/demos/files/datasets/DcOpsNoDupIP*.tar.gz"
+  tags:
+    - migrations
+    - alldemos
+

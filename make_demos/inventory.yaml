@@ -17,7 +17,7 @@ apic: #You ACI Fabric Name
           
 nae:
   hosts:
-    192.168.66.67:
+    192.168.66.64:
       validate_certs: no
       admin_user: admin
       admin_pass: C@ndidadmin1234
@@ -26,6 +26,7 @@ nae:
 vcenter:
   hosts:
     10.67.185.112:
+      govc_package: "https://github.com/vmware/govmomi/releases/download/v0.23.0/govc_linux_amd64.gz"
       validate_certs: no
       govc_url: "https://administrator@vsphere.local:123Cisco123!@vc2.cam.ciscolabs.com/sdk"
       datacenter: STLD

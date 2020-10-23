@@ -7,6 +7,73 @@
       validate_certs: "{{ validate_certs }}"
       port: "{{ port }}"
 
+#Delete the AG used for the demos, **NAE** will also delete the offline analysis associated with them
+- name: Delete AG
+  cisco.nae.nae_ag:
+    <<: *nae_login
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ ags }}"
+  tags: 
+    - nae_cleanup
+
+- name: Get NAE Uploaded Files
+  cisco.nae.nae_file_management:
+    <<: *nae_login
+    state: query
+  register: nae_files
+  tags: 
+    - nae_cleanup
+
+#This will delete any file that contains 'ChangeMgmt' or 'DcOps' in the name
+- name: Delete Demo Files 
+  cisco.nae.nae_file_management:
+    <<: *nae_login
+    name: "{{ item.display_name }}"
+    state: absent
+  with_items: "{{ nae_files.Result }}"
+  when: "('ChangeMgmt' in item.display_name or 'DcOps' in item.display_name)"
+  tags: 
+    - nae_cleanup
+
+- name: Delete Requirement Sets
+  cisco.nae.nae_compliance:
+    <<: *nae_login
+    name: NAE Requirements
+    state: absent
+    selector: requirement_set
+  tags: 
+    - nae_cleanup
+  ignore_errors: yes
+
+- name: Delete Requirements
+  cisco.nae.nae_compliance:
+    <<: *nae_login
+    name: "{{ item }}"
+    state: absent
+    selector: requirement
+  with_items:
+    - BD Config Requirement
+    - Segmentation
+  tags: 
+    - nae_cleanup
+  ignore_errors: yes
+
+- name: Delete Selectors
+  cisco.nae.nae_compliance:
+    <<: *nae_login
+    name: "{{ item }}"
+    state: absent
+    selector: object
+  with_items:
+    - DataBase
+    - Web
+    - BDs In NonProd
+  tags: 
+    - nae_cleanup
+  ignore_errors: yes
+
 - name: Create AG
   cisco.nae.nae_ag:
     <<: *nae_login
@@ -16,6 +83,7 @@
     - "{{ ags }}"
   tags:
     - nae_config
+    - nae_ag
 
 - name: Upload Files
   cisco.nae.nae_file_management:
@@ -29,17 +97,185 @@
   tags:
     - nae_config
 
-- name: Delete old Offline Analysis
-  cisco.nae.nae_offline_analysis:
+- name: Create object selector for DataBase Tier
+  cisco.nae.nae_compliance:
     <<: *nae_login
-    state: absent
-    complete: true
-    name: "{{ item.split('/')[-1].split('_')[0] }}"
-    filename: "{{ item.split('/')[-1].split('_')[0] }}"
-  with_fileglob:
-    - "roles/demos/files/datasets/*.tar.gz"
+    state: present
+    form: |
+      {
+      "name": "DataBase",
+      "description": null,
+      "includes": [
+        {
+          "matches": [
+            {
+              "application_epgmatch": {
+                "object_attribute": "DN",
+                "tenant": {
+                  "pattern": "nae-non-prod",
+                  "type": "EXACT"
+                },
+                "application_profile": {
+                  "pattern": "payroll-ap",
+                  "type": "EXACT"
+                },
+                "application_epg": {
+                  "pattern": "payroll-db-tier-epg",
+                  "type": "EXACT"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "excludes": [],
+      "selector_type": "OST_EPG"
+      }
   tags:
     - nae_config
+    - nae_compliance
+  ignore_errors: yes
+
+- name: Create object selector for Web Tier
+  cisco.nae.nae_compliance:
+    <<: *nae_login
+    state: present
+    selector: object
+    form: |
+      {
+      "name": "Web",
+      "description": null,
+      "includes": [
+        {
+          "matches": [
+            {
+              "application_epgmatch": {
+                "object_attribute": "DN",
+                "tenant": {
+                  "pattern": "nae-non-prod",
+                  "type": "EXACT"
+                },
+                "application_profile": {
+                  "pattern": "payroll-ap",
+                  "type": "EXACT"
+                },
+                "application_epg": {
+                  "pattern": "payroll-web-tier-epg",
+                  "type": "EXACT"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "excludes": [],
+      "selector_type": "OST_EPG"
+      }
+  tags:
+    - nae_config
+    - nae_compliance
+  ignore_errors: yes
+
+- name: Create Config Compliance Requirement for Web to DB communication 
+  cisco.nae.nae_compliance:
+    <<: *nae_login
+    state: present
+    selector: requirement
+    form: |
+      {
+        "name": "Segmentation",
+        "config_compliance_parameter": {},
+        "epg_selector_a": "Web",
+        "epg_selector_b": "DataBase",
+        "requirement_type": "SEGMENTATION",
+        "communication_type": "MUST_NOT",
+        "enable_aggregate_event_for_tenant": false,
+        "is_all_traffic": false
+      }
+  tags:
+    - nae_config
+    - nae_compliance
+  ignore_errors: yes
+
+- name: Create object selector for Bridge Domains
+  cisco.nae.nae_compliance:
+    <<: *nae_login
+    state: present
+    form: |
+      {
+                    "name": "BDs In NonProd",
+                    "description": null,
+                    "includes": [
+                      {
+                        "matches": [
+                          {
+                            "tenant_match": {
+                              "object_attribute": "DN",
+                              "tenant": {
+                                "pattern": "nae-non-prod",
+                                "type": "EXACT"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "excludes": [],
+                    "selector_type": "OST_BD"
+                  }
+  tags:
+    - nae_config
+    - nae_compliance
+  ignore_errors: yes
+
+- name: Create Config Compliance Requirement for Web to DB communication 
+  cisco.nae.nae_compliance:
+    <<: *nae_login
+    state: present
+    selector: requirement
+    form: |
+      {
+        "name": "BD Config Requirement",
+        "requirement_type": "CONFIGURATION_COMPLIANCE",
+        "epg_selector_a": "BDs In NonProd",
+        "config_compliance_parameter": {
+          "and_parameters": [
+            {
+              "parameter": "CCP_L2_UNKNOWN_UNICAST",
+              "value": "Hardware Proxy",
+              "operator": "EQUAL_TO"
+            },
+            {
+              "parameter": "CCP_LIMIT_IP_LEARNING_TO_SUBNET",
+              "value": "Yes",
+              "operator": "EQUAL_TO"
+            }
+          ]
+        }
+      }
+  tags:
+    - nae_config
+    - nae_compliance
+  ignore_errors: yes
+
+- name: Create Requirement Set for Web to DB communication 
+  cisco.nae.nae_compliance:
+    <<: *nae_login
+    state: present
+    ag_name: Change Management
+    selector: requirement_set
+    form: |
+      {
+
+        "name": "NAE Requirements",
+        "requirements": [
+            "Segmentation",
+            "BD Config Requirement"
+        ]
+      }
+  tags:
+    - nae_config
+    - nae_compliance
   ignore_errors: yes
 
 - name: Do Change Management Offline Analysis
@@ -56,7 +292,7 @@
     - nae_config
   when: "'ChangeMgmt' in item" 
 
-- name: Do Datacenter Operatiosn Offline Analysis
+- name: Do Datacenter Operations Offline Analysis
   cisco.nae.nae_offline_analysis:
     <<: *nae_login
     state: present
@@ -70,11 +306,60 @@
     - nae_config
   when: "'DcOps' in item"
 
-- name: Delete AG
-  cisco.nae.nae_ag:
+- name: Do Datacenter Operations Delta
+  cisco.nae.nae_delta:
     <<: *nae_login
-    name: "{{ item }}"
-    state: absent
-  with_items:
-    - "{{ ags }}"
-  tags: [ never, nae_cleanup ]
+    state: present
+    ag_name: "Data Center Operations"
+    name: "Delta Analysis"
+  tags:
+    - nae_config
+  ignore_errors: yes
+
+- name: Do Migrations Offline Analysis
+  cisco.nae.nae_offline_analysis:
+    <<: *nae_login
+    state: present
+    complete: true
+    name: "{{ item.split('/')[-1].split('_')[0] }}"
+    ag_name: "Migrations"
+    filename: "{{ item.split('/')[-1].split('_')[0] }}"
+  with_fileglob:
+    - "roles/demos/files/datasets/*.tar.gz"
+  tags:
+    - nae_config
+  when: "'Migrations' in item"
+
+- name: Do EpochDelta Offline Analysis
+  cisco.nae.nae_offline_analysis:
+    <<: *nae_login
+    state: present
+    complete: true
+    name: "{{ item.split('/')[-1].split('_')[0] }}"
+    ag_name: "Epoch Analysis"
+    filename: "{{ item.split('/')[-1].split('_')[0] }}"
+  with_fileglob:
+    - "roles/demos/files/datasets/*.tar.gz"
+  tags:
+    - nae_config
+  when: "'EpochDelta' in item"
+
+- name: Do EpochDelta Offline Analysis
+  cisco.nae.nae_delta:
+    <<: *nae_login
+    state: present
+    ag_name: "Epoch Analysis"
+    name: "Epoch Analysis_1"
+  tags:
+    - nae_config
+
+- name: Add a pre-change analysis from manual changes
+  cisco.nae.nae_prechange:
+    <<: *nae_login
+    ag_name: Change Management
+    name: PreChangeVerification
+    state: present
+    changes: "{{ pcv_changes | to_json }}"
+  tags:
+    - nae_config
+    - nae_pcv

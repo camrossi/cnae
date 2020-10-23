@@ -1,0 +1,101 @@
+#Epoch Analysis uses the DcOpsNoDupIP epoch as base and colelcts a new one with duplicate IP. 
+#I do this to have the duplicate IP event in the later epoch.
+- set_fact:
+    aci_login: &aci_login
+      hostname: "{{ inventory_hostname }}"
+      username: "{{ aci_temp_username }}"
+      private_key: "{{ './roles/aci/files/'+ aci_temp_username + '-user.key' }}"
+      certificate_name: "{{ aci_temp_username }}"
+      use_proxy: "no"
+      validate_certs: "{{ validate_certs }}"
+      port: "{{ port }}"
+  when: "'apic' in group_names"
+
+# Most likely the VM is already powered up unless was powered off manually so I ignore the error. 
+- name: Epoch Delta - Power On VM with Duplicate IP 
+  shell: govc vm.power -on nae-vdi-{{ item }}
+  with_sequence: start=10 end=15
+  async: 10
+  poll: 0
+  environment:
+    GOVC_URL: "{{ govc_url }}"
+    GOVC_INSECURE: "true"
+    GOVC_DATASTORE: "{{ data_store }}"  
+  tags:
+    - epochdelta
+    - alldemos
+  when: "'vcenter' in group_names"
+  ignore_errors: yes
+  
+- name: Epoch Delta - Delete old offline data sets
+  shell: rm -rf ./roles/demos/files/datasets/EpochDelta*.tar.gz
+  tags:
+    - epochdelta
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: Epoch Delta - Copy DcOpsNoDupIP to Epoch Delta
+  copy:
+    src: "{{ item }}"
+    dest: ./roles/demos/files/datasets/EpochDeltaNoDupIP.tar.gz
+  with_fileglob:
+    - "roles/demos/files/datasets/DcOpsNoDupIP*.tar.gz"
+  when: "'apic' in group_names"
+  tags:
+    - epochdelta
+    - alldemos
+
+- name: Epoch Delta - Break VDI DMZ Filter
+  cisco.aci.aci_filter_entry:
+    <<: *aci_login
+    tenant: nae-non-prod
+    filter: RDP
+    entry: tcp_3389_3390
+    ip_protocol: tcp
+    ether_type: ip
+    dst_port_start: 3391
+    dst_port_end: 3391
+    state: present
+  tags:
+    - epochdelta
+    - alldemos
+  when: "'apic' in group_names"
+
+#The logic here is simplified. I wait for 1 Fault (imdata[0]) and I expect that fault to be the duplicate IP. This only works 
+#for this specific APIC config 
+- name: Epoch Delta - Wait for DUP IP Fault to be Present, if it fails check why the nae-vdi-10 VM is not generating a duplicate IP
+  cisco.aci.aci_rest:
+    <<: *aci_login
+    method: get
+    path: "/api/node/mo/uni/tn-nae-non-prod/ap-internal-vdi-ap/epg-internal-vdi-desktops-epg.json?query-target=self&rsp-subtree-include=faults,no-scoped,subtree"
+  register: fault
+  tags:
+    - epochdelta
+    - alldemos
+  when: "'apic' in group_names" 
+  until: "fault.imdata[0] is defined and 'F3083' in fault.imdata[0].faultInst.attributes.code and 'soaking' is match fault.imdata[0].faultInst.attributes.lc"
+  retries: 20
+  delay: 5
+
+- name: Epoch Delta - Collect Duplicate IP Epoch
+  script: roles/demos/files/cnae_data_collection.py -versionProperties roles/demos/files/version.properties -cnaeMode APIC -clusterName EpochDeltaDupIP -user "{{ admin_user }}" -password "{{ admin_pass }}" -targetDir roles/demos/files/datasets -apicConfigExportPolicyName "NAE_Export"  -iterations 1 -APIC "{{ inventory_hostname }}" 
+  tags:
+    - epochdelta
+    - alldemos
+  when: "'apic' in group_names"
+
+- name: Epoch Delta - Fix VDI DMZ Contract
+  cisco.aci.aci_filter_entry:
+    <<: *aci_login
+    tenant: nae-non-prod
+    filter: RDP
+    entry: tcp_3389_3390
+    ip_protocol: tcp
+    ether_type: ip
+    dst_port_start: 3389
+    dst_port_end: 3390
+    state: present
+  tags:
+    - epochdelta
+    - alldemos
+  when: "'apic' in group_names"

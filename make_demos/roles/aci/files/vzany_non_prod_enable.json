@@ -1,0 +1,33 @@
+{
+    "totalCount": "1",
+    "imdata": [
+        {
+            "vzAny": {
+                "attributes": {
+                    "annotation": "",
+                    "descr": "",
+                    "dn": "uni/tn-nae-non-prod/ctx-non-prod-vrf/any",
+                    "matchT": "AtleastOne",
+                    "name": "",
+                    "nameAlias": "",
+                    "prefGrMemb": "disabled",
+                    "userdom": "all"
+                },
+                "children": [
+                    {
+                        "vzRsAnyToProv": {
+                            "attributes": {
+                                "annotation": "",
+                                "intent": "install",
+                                "matchT": "AtleastOne",
+                                "prio": "unspecified",
+                                "tnVzBrCPName": "NP-E-administration-contract",
+                                "userdom": ":all:common:"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,4 +1,3 @@
-#!/usr/bin/python2
 '''
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
@@ -7710,14 +7709,14 @@ class CandidException(Exception):
 def loggerInit(output_dir=None, module_name='CnaeDataCollection'):
     import logging
     for each_module in ['requests', 'urllib3', 'paramiko', 'pyvmomi', 'nitro-python']:
-        logging.getLogger(each_module).setLevel(logging.DEBUG)
+        logging.getLogger(each_module).setLevel(logging.WARNING)
 
     format_pattern = '%(asctime)s %(name)-12s %(threadName)s %(levelname)-8s %(message)s'
     date_time_format = '%m-%d-%y %H:%M:%S'
     formatter = logging.Formatter(format_pattern, datefmt=date_time_format)
 
     # Create root logger
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.INFO,
                         format=format_pattern,
                         datefmt=date_time_format,
                         stream=sys.stdout)
@@ -7792,15 +7791,12 @@ def candidDataCollectionOffline(args, ccg=None):
         '''
         APIC/STANDALONE/MSO Credentials
         '''
-        if args.password:
-            password = args.password
-        else: 
-            try:
-                print("Enter password for %s : %s , user: %s" % (
-                    ccg.get("cnaeMode"), ccg.get("entityIps"), ccg.get("user")))
-                password = getpass.getpass()
-            except Exception as e:
-                raise SystemExit("Please enter password:" + str(e))
+        try:
+            print("Enter password for %s : %s , user: %s" % (
+                ccg.get("cnaeMode"), ccg.get("entityIps"), ccg.get("user")))
+            password = getpass.getpass()
+        except Exception as e:
+            raise SystemExit("Please enter password:" + str(e))
 
         # Ask for lan password only if the mode is standalone
         lan_password = None
@@ -9308,7 +9304,7 @@ class DirectRestAccess(object):
             self.reauth()
         except Exception as e:
             if logger:
-                logger.error("Reauth failed with exception: " + str(e) +
+                logger.warning("Reauth failed with exception: " + str(e) +
                              " trying login instead.")
             self.login()
 
@@ -9787,10 +9783,6 @@ def addCommonArguments(parser):
         "-user",
         required=False,
         help="Specify user name to login to fabric")
-    parser.add_argument(
-        "-password",
-        required=False,
-        help="Specify password to login to fabric")
     parser.add_argument(
         '-targetDir', action="store",
         help="Specify destination directory to dump data",

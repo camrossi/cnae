@@ -1,0 +1,14 @@
+1) Add password argument in argparse
+    parser.add_argument(
+        "-password",
+        required=False,
+        help="Specify password to login to fabric")
+
+2) in the 
+ '''
+        APIC/STANDALONE/MSO Credentials
+        '''
+Section add:
+        if args.password:
+            password = args.password
+        else: 

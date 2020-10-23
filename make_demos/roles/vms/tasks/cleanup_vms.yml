@@ -1,7 +1,7 @@
 ---
 - name: Power Off VM
   shell: govc vm.power -off nae-vdi-{{ item }}
-  with_sequence: start=1 end=10
+  with_sequence: start=1 end=15
   ignore_errors: yes
   async: 10
   poll: 0
@@ -9,6 +9,7 @@
   tags:
     - cleanup
     - delete_vms
+
 - name: Wait for VMs to be off
   async_status:
     jid: "{{ item.ansible_job_id }}"
@@ -21,10 +22,9 @@
     - cleanup
     - delete_vms
 
-
 - name: Delete VMs
   shell: govc vm.destroy nae-vdi-{{ item }}
-  with_sequence: start=1 end=10
+  with_sequence: start=1 end=15
   ignore_errors: yes
   async: 10
   poll: 0
@@ -61,6 +61,19 @@
   ignore_errors: yes
   async: 10
   poll: 0
+  register: _create_instances
+  tags:
+    - cleanup
+    - delete_vms
+  
+- name: Wait for DMZ VMs to be deleted
+  async_status:
+    jid: "{{ item.ansible_job_id }}"
+  register: result
+  until: result.finished
+  retries: 30
+  with_items: "{{ _create_instances.results }}"
+  ignore_errors: yes
   tags:
     - cleanup
     - delete_vms
