@@ -7,17 +7,6 @@
       validate_certs: "{{ validate_certs }}"
       port: "{{ port }}"
 
-#Delete the AG used for the demos, **NAE** will also delete the offline analysis associated with them
-- name: Delete AG
-  cisco.nae.nae_ag:
-    <<: *nae_login
-    name: "{{ item }}"
-    state: absent
-  with_items:
-    - "{{ ags }}"
-  tags: 
-    - nae_cleanup
-
 - name: Get NAE Uploaded Files
   cisco.nae.nae_file_management:
     <<: *nae_login
@@ -73,6 +62,17 @@
   tags: 
     - nae_cleanup
   ignore_errors: yes
+
+#Delete the AG used for the demos, **NAE** will also delete the offline analysis associated with them
+- name: Delete AG
+  cisco.nae.nae_ag:
+    <<: *nae_login
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ ags }}"
+  tags: 
+    - nae_cleanup
 
 - name: Create AG
   cisco.nae.nae_ag:
@@ -363,3 +363,16 @@
   tags:
     - nae_config
     - nae_pcv
+
+- name: Delete Selectors
+  cisco.nae.nae_compliance:
+    <<: *nae_login
+    name: "{{ item }}"
+    state: absent
+    selector: object
+  with_items:
+    - DataBase1
+    - Web1
+    - BDs In NonProd1
+  tags: 
+    - test

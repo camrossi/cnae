@@ -17,7 +17,7 @@ apic: #You ACI Fabric Name
           
 nae:
   hosts:
-    192.168.66.64:
+    10.66.176.111:
       validate_certs: no
       admin_user: admin
       admin_pass: C@ndidadmin1234

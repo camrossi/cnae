@@ -1,0 +1,66 @@
+---
+- name: Ilaria Test
+  gather_facts: false
+  hosts: nae
+  connection: local
+  tasks:
+    - set_fact:
+        nae_login: &nae_login
+          host: 192.168.66.64
+          username: admin
+          password: C@ndidadmin1234
+          validate_certs: false
+          port: 443
+    - set_fact:
+        obj_sel:
+          - name: "test1"
+            tenant_pattern: "test"
+            tenant_match_type: "EXACT"
+            ap_pattern: "test"
+            ap_match_type: "EXACT"
+            epg_pattern: "test"
+            epg_match_type: "EXACT"
+          - name: "test2"
+            tenant_pattern: "test"
+            tenant_match_type: "EXACT"
+            ap_pattern: "test"
+            ap_match_type: "EXACT"
+            epg_pattern: "test"
+            epg_match_type: "EXACT"
+
+    - name: Create object selector for DataBase Tier
+      cisco.nae.nae_compliance:
+        <<: *nae_login
+        state: present
+        selector: object
+        form: |
+            {
+              "name": "{{ item.name }}",
+              "description": null,
+              "includes": [
+                {
+                  "matches" : [
+                    {
+                      "application_epgmatch": {
+                        "object_attribute": "DN",
+                        "tenant": {
+                          "pattern": "{{ item.tenant_pattern }}",
+                          "type": "{{ item.tenant_match_type }}"
+                        },
+                        "application_profile" : {
+                          "pattern": "{{ item.ap_pattern }}",
+                          "type": "{{ item.ap_match_type }}"
+                        },
+                        "application_epg" : {
+                          "pattern": "{{ item.epg_pattern }}",
+                          "type": "{{ item.epg_match_type }}"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "excludes" : [],
+              "selector_type": "OST_EPG"
+            } | to_json
+      with_items: "{{obj_sel}}"
