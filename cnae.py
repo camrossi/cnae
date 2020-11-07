@@ -803,3 +803,35 @@ class NAE:
             #self.logger.error(PrintException.printException(exc_type, exc_obj, tb))
             #print((PrintException.printException(exc_type, exc_obj, tb)))
             raise e
+    
+    def get_most_idle_model(self): 
+        #Unload the snapshot with higher idle time. There is no error control... 
+        #Get active SnapShots
+        url = 'https://'+self.ip_addr+'/nae/api/v1/connectivity-analysis-services/analysis/active'
+        req = requests.get(url, headers=self.http_headers,cookies=self.session_cookie, verify=False)
+        snaps = req.json()['value']['data']
+        snaps = sorted(snaps, key=lambda k: k['idle_time_in_milli_secs'], reverse=True) 
+        self.logger.debug("Snapsot {} has been idle for {}".format(snaps[0]['uuid'], snaps[0]['idle_time']))
+        return snaps[0]['uuid']
+
+
+    def can_epg(self,ag_name,query):
+        fabric_id = str(self.getAG(ag_name)['uuid'])
+        latest_epoch = self.getEpochs(ag_name)[-1]['epoch_id']
+        offloaded_epoch_id = self.get_most_idle_model()
+        self.logger.debug("Load epoch")
+
+        url = 'https://'+self.ip_addr+'/nae/api/v1/connectivity-analysis-services/analysis'
+        #I should only set offloaded_epoch_id if I cna't load more epoch in memory but is just a demo piece of code
+        form = '''{"snapshot_uuid":"''' + latest_epoch + '''",
+                "offloaded_epoch_id":"''' + offloaded_epoch_id + '''"
+                }'''
+        req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
+    
+        self.logger.debug("last epoch id is %s", latest_epoch)
+        url = 'https://'+self.ip_addr+'/nae/api/v1/connectivity-analysis-services/can-epg'
+        form = '''{
+        "query_str": "''' + query +'''",
+        "snapshot_uuid":"''' + latest_epoch + '''"}'''
+        req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
+        return(req.json())
