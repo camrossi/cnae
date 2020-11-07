@@ -1,0 +1,21 @@
+---
+
+- name: test nae
+  gather_facts: false
+  hosts: localhost
+  tasks:
+
+    - name: Query PCV
+      cisco.nae.nae_prechange:
+        host: 10.66.176.111
+        port: 443
+        username: admin
+        password: C@ndidadmin1234
+        ag_name: STLD_FAB1
+        name: IgnoreSM
+        state: query
+        verify: true
+        ignore_sm: 
+          - APP_EPG_NOT_DEPLOYED
+          - APP_EPG_HAS_NO_CONTRACT_IN_ENFORCED_VRF
+      delegate_to: localhost
