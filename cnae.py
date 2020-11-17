@@ -824,7 +824,7 @@ class NAE:
         url = 'https://'+self.ip_addr+'/nae/api/v1/connectivity-analysis-services/analysis'
         #I should only set offloaded_epoch_id if I cna't load more epoch in memory but is just a demo piece of code
         form = '''{"snapshot_uuid":"''' + latest_epoch + '''",
-                "offloaded_epoch_id":"''' + offloaded_epoch_id + '''"
+                "offloaded_epoch_id":"''' + offloaded_epoch_id + '''"˜
                 }'''
         req = requests.post(url, data=form,  headers=self.http_headers, cookies=self.session_cookie, verify=False)
     

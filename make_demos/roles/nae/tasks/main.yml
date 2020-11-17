@@ -96,6 +96,7 @@
     - "roles/demos/files/datasets/*.tar.gz"
   tags:
     - nae_config
+    - upfile
 
 - name: Create object selector for DataBase Tier
   cisco.nae.nae_compliance:
@@ -363,16 +364,3 @@
   tags:
     - nae_config
     - nae_pcv
-
-- name: Delete Selectors
-  cisco.nae.nae_compliance:
-    <<: *nae_login
-    name: "{{ item }}"
-    state: absent
-    selector: object
-  with_items:
-    - DataBase1
-    - Web1
-    - BDs In NonProd1
-  tags: 
-    - test
